@@ -1,4 +1,4 @@
-import { minMaxSum } from "../utils/funts";
+import { minMaxSum } from "../utils/funs";
 import { FactorBinned, FactorDiscrete } from "./Factor";
 import { Dis, Num, Ref } from "./Scalar";
 import { ValueLike, view } from "./ValueLike";

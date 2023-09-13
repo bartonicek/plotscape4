@@ -1,4 +1,4 @@
-import { disjointUnion, minMax } from "../utils/funts";
+import { disjointUnion, minMax } from "../utils/funs";
 import { Dis, Num, dis, num } from "./Scalar";
 
 export type Factor = {

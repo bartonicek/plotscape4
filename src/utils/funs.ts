@@ -1,8 +1,14 @@
 import { Dict, Scalar, ValueOf } from "./types";
 
+export const just =
+  <T>(x: T) =>
+  () =>
+    x;
 export const identity = <T>(x: T) => x;
 export const secondArgument = <T>(x: any, y: T) => y;
 export const POJO = () => ({});
+
+export const toInt = (x: string) => parseInt(x, 10);
 
 export const keys = <T extends Dict, K extends keyof T>(x: T) => {
   return Object.keys(x) as K[];

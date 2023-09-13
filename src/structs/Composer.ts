@@ -1,4 +1,4 @@
-import { POJO, identity, secondArgument } from "../utils/funts";
+import { POJO, identity, secondArgument } from "../utils/funs";
 import { Dict, JustFn, MapFn, ReduceFn, Reducer } from "../utils/types";
 
 const identityReducer = { reducefn: secondArgument, initialfn: POJO };

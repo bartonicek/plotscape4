@@ -1,0 +1,97 @@
+html,
+body {
+  width: 100%;
+  height: 100%;
+}
+
+#app {
+  margin: auto;
+  background-color: #deded9;
+  width: 90%;
+  height: 90%;
+  box-shadow: inset 2px 2px 5px #00000025;
+}
+
+canvas {
+  position: absolute;
+  padding: 0px;
+}
+
+.plotscape-scene {
+  position: relative;
+  display: grid !important;
+  grid-template-columns: repeat(var(--ncols), 1fr);
+  grid-template-rows: repeat(var(--nrows), 1fr);
+  box-sizing: border-box;
+  padding: 20px;
+  padding-bottom: 30px;
+  padding-top: 30px;
+  grid-gap: 20px;
+  overflow: hidden;
+}
+
+.plotscape-container {
+  background-color: whitesmoke;
+  border: 1px solid #7a7a7a;
+  position: relative;
+  display: inherit !important;
+  box-shadow: 4px 4px 3px #00000025;
+}
+
+.plotscape-container.active {
+  outline: 2px solid #7a7a7a;
+}
+
+.plotscape-under {
+  z-index: 1;
+  background-color: #ededed;
+}
+
+.plotscape-base {
+  z-index: 2;
+  background-color: #fefffe;
+  border-right: 2px solid #fefffe;
+  border-top: 2px solid #fefffe;
+}
+
+.plotscape-1 {
+  z-index: 11;
+}
+
+.plotscape-2 {
+  z-index: 10;
+}
+
+.plotscape-3 {
+  z-index: 9;
+}
+
+.plotscape-4 {
+  z-index: 8;
+}
+
+.plotscape-129 {
+  z-index: 7;
+}
+
+.plotscape-130 {
+  z-index: 6;
+}
+
+.plotscape-131 {
+  z-index: 5;
+}
+
+.plotscape-132 {
+  z-index: 4;
+}
+
+.plotscape-user {
+  z-index: 20;
+  border-left: 2px solid #3d3d3d;
+  border-bottom: 2px solid #3d3d3d;
+}
+
+.plotscape-over {
+  z-index: 21;
+}

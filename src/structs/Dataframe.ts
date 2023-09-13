@@ -1,4 +1,4 @@
-import { entries, unwrapAll } from "../utils/funts";
+import { entries, unwrapAll } from "../utils/funs";
 import { Cols, Dict, RowOf } from "../utils/types";
 import { Discrete, Numeric, ScalarOf } from "./Variable";
 

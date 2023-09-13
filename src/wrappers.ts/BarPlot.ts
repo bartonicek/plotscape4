@@ -1,9 +1,10 @@
-import { SignalStore } from "../SignalStore";
-import { Scene } from "../dom/Scene";
+import { Plot } from "../dom/plot/Plot";
+import { Scene } from "../dom/scene/Scene";
+import { Composer } from "../structs/Composer";
+import { PartitionSet } from "../structs/PartitionSet";
 import { Dis, num } from "../structs/Scalar";
+import { SignalStore } from "../structs/SignalStore";
 import { Discrete } from "../structs/Variable";
-import { Composer } from "../wrangling/Composer";
-import { PartitionSet } from "../wrangling/PartitionSet";
 
 export class BarPlot<T extends { var1: Discrete }> {
   store: SignalStore<any, any>;
@@ -11,6 +12,8 @@ export class BarPlot<T extends { var1: Discrete }> {
   partitionSet: PartitionSet<T, any>;
 
   constructor(public scene: Scene<T>) {
+    const plot = new Plot(scene);
+
     const store = SignalStore.default().bind({
       factor: scene.data.cols.var1.factor,
       marker: scene.marker.factor,
@@ -32,6 +35,6 @@ export class BarPlot<T extends { var1: Discrete }> {
 
     this.composer = composer;
     this.store = store;
-    this.partitionSet = partitionSet;
+    this.partitionSet = partitionSet as any;
   }
 }

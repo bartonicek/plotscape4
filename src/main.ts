@@ -1,8 +1,10 @@
-import { Scene } from "./dom/Scene";
+import { Scene } from "./dom/scene/Scene";
 import { Dataframe } from "./structs/Dataframe";
-import { getData } from "./utils/funts";
+import "./style.css";
+import { getData } from "./utils/funs";
 import { BarPlot } from "./wrappers.ts/BarPlot";
 
+const app = document.querySelector("#app") as HTMLDivElement;
 const mpg = await getData("./testData/mpg.json");
 
 const dataMpg = Dataframe.parseCols(mpg, {
@@ -10,5 +12,5 @@ const dataMpg = Dataframe.parseCols(mpg, {
   manufacturer: "discrete",
 }).select({ var1: "manufacturer" });
 
-const scene1 = new Scene(dataMpg);
+const scene1 = new Scene(app, dataMpg);
 const barplot1 = new BarPlot(scene1);

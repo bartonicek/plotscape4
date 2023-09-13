@@ -1,8 +1,8 @@
 import { Accessor, Setter, createSignal } from "solid-js";
-import { Factor } from "./structs/Factor";
-import { Variable } from "./structs/Variable";
-import { entries } from "./utils/funts";
-import { DropNever, Fn, Scalar } from "./utils/types";
+import { entries } from "../utils/funs";
+import { DropNever, Fn, Scalar } from "../utils/types";
+import { Factor } from "./Factor";
+import { Variable } from "./Variable";
 
 export type Getters = { [key: string]: Accessor<any> };
 export type Setters = { [key: string]: Setter<any> };

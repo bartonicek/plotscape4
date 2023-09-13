@@ -2,7 +2,7 @@ import { Accessor, createMemo, untrack } from "solid-js";
 import { Dataframe } from "../structs/Dataframe";
 import { Factor, FactorProduct } from "../structs/Factor";
 import { ref } from "../structs/Scalar";
-import { keys } from "../utils/funts";
+import { keys } from "../utils/funs";
 import { Cols, Scalar } from "../utils/types";
 import { Composer } from "./Composer";
 import { IndexMap } from "./IndexMap";
