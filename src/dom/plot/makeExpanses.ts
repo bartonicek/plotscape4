@@ -1,16 +1,28 @@
-import { createSignal } from "solid-js";
-import { just } from "../../utils/funs";
-import { Expanse } from "../../scales.ts/Expanse";
+import { Expanse } from "../../scales/Expanse";
+import { num } from "../../structs/Scalar";
+import { sig } from "../../structs/ValueLike";
 import { PlotStore } from "./makePlotStore";
 
 const makeExpanses = (store: PlotStore) => {
   return {
-    outerH: Expanse.default().setSignals(just(0), store.width),
-    outerV: Expanse.default().setSignals(just(0), store.height),
-    innerH: Expanse.default().setSignals(store.innerLeft, store.innerRight),
-    innerV: Expanse.default().setSignals(store.innerBottom, store.innerTop),
-    normX: Expanse.default().setSignals(store.normXLower, store.normXUppper),
-    normY: Expanse.default().setSignals(store.normYLower, store.normYUpper),
+    outerH: Expanse.default().setSignals(
+      sig(store.innerLeft),
+      sig(store.innerRight)
+    ),
+    outerV: Expanse.default().setSignals(
+      sig(store.innerBottom),
+      sig(store.innerTop)
+    ),
+    innerH: Expanse.default().setSignals(num(0), sig(store.innerWidth)),
+    innerV: Expanse.default().setSignals(num(0), sig(store.innerHeight)),
+    normX: Expanse.default().setSignals(
+      sig(store.normXLower),
+      sig(store.normXUppper)
+    ),
+    normY: Expanse.default().setSignals(
+      sig(store.normYLower),
+      sig(store.normYUpper)
+    ),
   };
 };
 

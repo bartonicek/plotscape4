@@ -1,28 +1,45 @@
-import { ScalePlaceholder } from "../../scales.ts/ScalePlaceholder";
+import { Scale, ScalePlaceholder } from "../../scales/Scale";
 import { PlotExpanses } from "./makeExpanses";
 
 const makeScales = (expanses: PlotExpanses) => {
+  const { outerH, outerV, innerH, innerV, normX, normY } = expanses;
+
   return {
-    data: {
-      inner: {
-        x: new ScalePlaceholder()
-          .setCodomain(expanses.outerH)
-          .setNorm(expanses.normX),
-        y: new ScalePlaceholder()
-          .setCodomain(expanses.outerV)
-          .setNorm(expanses.normY),
+    inner: {
+      data: {
+        x: ScalePlaceholder.default()
+          .setCodomain(innerH.lower, innerH.upper)
+          .setNorm(normX.lower, normX.upper),
+        y: ScalePlaceholder.default()
+          .setCodomain(innerV.lower, innerV.upper)
+          .setNorm(normY.lower, normY.upper),
       },
-      outer: {
-        x: new ScalePlaceholder()
-          .setCodomain(expanses.innerH)
-          .setNorm(expanses.normX),
-        y: new ScalePlaceholder()
-          .setCodomain(expanses.innerV)
-          .setNorm(expanses.normY),
+    },
+    outer: {
+      data: {
+        x: ScalePlaceholder.default()
+          .setCodomain(outerH.lower, outerH.upper)
+          .setNorm(normX.lower, normX.upper),
+        y: ScalePlaceholder.default()
+          .setCodomain(outerV.lower, outerV.upper)
+          .setNorm(normY.lower, normY.upper),
       },
     },
   };
 };
 
 export default makeScales;
-export type PlotScales = ReturnType<typeof makeScales>;
+export type PlotScales = {
+  inner: {
+    data: {
+      x: Scale;
+      y: Scale;
+    };
+  };
+  outer: {
+    data: {
+      x: Scale;
+      y: Scale;
+    };
+  };
+};

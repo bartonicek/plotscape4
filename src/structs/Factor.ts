@@ -181,17 +181,23 @@ export class FactorProduct {
 
     const uniqueIndices = new Set<number>();
     const indices: number[] = [];
-    const cases = {} as Record<number, Set<number>>;
+    const positions = {} as Record<number, Set<number>>;
     const labels = {} as Record<number, Record<string, any>>;
+
+    const { max, floor, log10 } = Math;
+    const offset = floor(log10(max(...factor2.uniqueIndices()))) + 1;
 
     for (let i = 0; i < factor1.indices().length; i++) {
       const [f1i, f2i] = [factor1.index(i), factor2.index(i)];
-      const jointIndex = parseInt([f1i, f2i].join("0"), 10);
+      const jointIndex = parseInt(
+        [f1i, f2i.toString().padStart(offset, "0")].join("0"),
+        10
+      );
 
       uniqueIndices.add(jointIndex);
       indices.push(jointIndex);
 
-      if (!(jointIndex in cases)) cases[jointIndex] = new Set();
+      if (!(jointIndex in positions)) positions[jointIndex] = new Set();
       if (!(jointIndex in labels)) {
         labels[jointIndex] = disjointUnion(
           factor1.label(f1i),
@@ -199,9 +205,9 @@ export class FactorProduct {
         );
       }
 
-      cases[jointIndex].add(i);
+      positions[jointIndex].add(i);
     }
 
-    return new FactorProduct(uniqueIndices, indices, cases, labels, meta);
+    return new FactorProduct(uniqueIndices, indices, positions, labels, meta);
   };
 }

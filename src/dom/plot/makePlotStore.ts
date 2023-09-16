@@ -1,7 +1,6 @@
-import graphicParameters from "../graphicParameters";
 import { createSignal } from "solid-js";
 import { just } from "../../utils/funs";
-import { ExpanseSetter } from "../../scales.ts/Expanse";
+import graphicParameters from "../graphicParameters";
 
 const makePlotStore = () => {
   const [active, setActive] = createSignal(false);
@@ -33,18 +32,11 @@ const makePlotStore = () => {
   const innerBottom = marginBottom;
   const innerTop = () => height() - marginTop();
 
-  const [normXLower, _setNormXLower] = createSignal(0);
-  const [normXUppper, _setNormXUpper] = createSignal(1);
-  const [normYLower, _setNormYLower] = createSignal(0);
-  const [normYUpper, _setNormYUpper] = createSignal(1);
-
-  const normX = new ExpanseSetter(normXLower, normXUppper);
-  const normY = new ExpanseSetter(normYLower, normYUpper);
-
-  const setNormXLower = normX.setLower;
-  const setNormXUpper = normX.setUpper;
-  const setNormYLower = normY.setLower;
-  const setNormYUpper = normY.setUpper;
+  const { x, y } = graphicParameters.defaultNorm;
+  const [normXLower, setNormXLower] = createSignal(x.lower);
+  const [normXUppper, setNormXUpper] = createSignal(x.upper);
+  const [normYLower, setNormYLower] = createSignal(y.lower);
+  const [normYUpper, setNormYUpper] = createSignal(y.upper);
 
   const [labelInterval, setLabelInterval] = createSignal(1);
   const [labelCycle, setLabelCycle] = createSignal(0);
@@ -85,14 +77,12 @@ const makePlotStore = () => {
     setMouseY,
     setClickX,
     setClickY,
+    setLabelInterval,
+    setLabelCycle,
     setNormXLower,
     setNormXUpper,
     setNormYLower,
     setNormYUpper,
-    setLabelInterval,
-    setLabelCycle,
-    normX,
-    normY,
   };
 
   return store;

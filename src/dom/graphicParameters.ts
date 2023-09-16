@@ -8,6 +8,10 @@ const graphicParameters = {
   transientColour: `#377EB8`,
   fontsize: 16,
   marginLines: [4, 4, 2, 2] as const,
+  defaultNorm: {
+    x: { lower: 0.05, upper: 0.95 },
+    y: { lower: 0.05, upper: 0.95 },
+  },
 };
 
 export default graphicParameters;

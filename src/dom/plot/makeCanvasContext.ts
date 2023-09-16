@@ -8,10 +8,7 @@ type GraphicLayerOptions = {
   classes?: string[];
 };
 
-export const makeCanvasContext = (
-  plot: Plot<any>,
-  options: GraphicLayerOptions
-) => {
+export const makeCanvasContext = (plot: Plot, options: GraphicLayerOptions) => {
   const scalingFactor = options.scalingFactor ?? 3;
   const canvas = html`<canvas />` as HTMLCanvasElement;
 

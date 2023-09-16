@@ -12,7 +12,7 @@ export class Dataframe<T extends Cols> {
   static from = <T extends Cols>(cols: T) => new Dataframe(cols);
   static fromRow = <T extends Cols>(row: RowOf<T>) => {
     const cols = {} as T;
-    for (const [k, v] of entries(row)) cols[k] = v.toVariable() as any;
+    for (const [k, v] of entries(row)) if (v) cols[k] = v.toVariable() as any;
     return Dataframe.from(cols);
   };
   static parseCols = <
@@ -56,7 +56,12 @@ export class Dataframe<T extends Cols> {
     return row as { [key in keyof T]: ScalarOf<T[key]> };
   };
 
-  rowUnwrap = (index: number) => unwrapAll(this.row(index));
+  unwrapRow = (index: number) => unwrapAll(this.row(index));
+  unwrapRows = () => {
+    const result = [];
+    for (let i = 0; i < this.meta.n; i++) result.push(this.unwrapRow(i));
+    return result;
+  };
 
   *[Symbol.iterator]() {
     for (let i = 0; i < this.meta.n; i++) yield this.row(i);

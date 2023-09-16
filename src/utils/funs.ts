@@ -1,5 +1,6 @@
-import { Dict, Scalar, ValueOf } from "./types";
+import { Dict, Fn, Scalar, ValueOf } from "./types";
 
+export const call = (fn: Fn) => fn();
 export const just =
   <T>(x: T) =>
   () =>
@@ -22,7 +23,7 @@ export const entries = <T extends Dict, K extends keyof T>(x: T) => {
 
 export const unwrapAll = <T extends Record<string, Scalar>>(obj: T) => {
   const result = {} as { [key in keyof T]: ValueOf<T[key]> };
-  for (const [k, v] of entries(obj)) result[k] = v.value() as any;
+  for (const [k, v] of entries(obj)) result[k] = v?.value?.() as any;
   return result;
 };
 
@@ -80,4 +81,33 @@ export const disjointUnion = <T extends Dict, U extends Dict>(
   }
 
   return result;
+};
+
+export const rectOverlap = (
+  rect1x: [number, number],
+  rect1y: [number, number],
+  rect2x: [number, number],
+  rect2y: [number, number]
+) => {
+  const [r1xmin, r1xmax] = minMax(rect1x);
+  const [r1ymin, r1ymax] = minMax(rect1y);
+  const [r2xmin, r2xmax] = minMax(rect2x);
+  const [r2ymin, r2ymax] = minMax(rect2y);
+
+  return !(
+    r1xmax < r2xmin || // If any holds, rectangles don't overlap
+    r1xmin > r2xmax ||
+    r1ymax < r2ymin ||
+    r1ymin > r2ymax
+  );
+};
+
+export const throttle = (fun: Function, delay: number) => {
+  let lastTime = 0;
+  return (...args: any[]) => {
+    const now = new Date().getTime();
+    if (now - lastTime < delay) return;
+    lastTime = now;
+    fun(...args);
+  };
 };

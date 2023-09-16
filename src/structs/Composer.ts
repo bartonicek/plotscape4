@@ -1,50 +1,53 @@
 import { POJO, identity, secondArgument } from "../utils/funs";
-import { Dict, JustFn, MapFn, ReduceFn, Reducer } from "../utils/types";
+import { JustFn, MapFn, ReduceFn, Reducer } from "../utils/types";
 
 const identityReducer = { reducefn: secondArgument, initialfn: POJO };
 
-// T = Row of data
-// U = Factor labels
-// V = Reduced data
-// W = Mapped and Stacked data
-
-export class Composer<T, U, V = any, W = any> {
+export class Composer<T, U, V = any, F = any> {
   constructor(
-    public reducer: Reducer<T, V>,
-    public mapper: MapFn<V & U, W>,
-    public stacker: Reducer<W, W>
+    public reducer: Reducer<T, U>,
+    public mapper: MapFn<U & F, V>,
+    public stacker: Reducer<V, V>,
+    public state = { reduced: false, mapped: false, stacked: false }
   ) {}
 
-  static default = <T extends Dict, U extends Dict>() => {
-    return new Composer<T, U>(identityReducer, identity, identityReducer);
-  };
-
-  reduce = <V2>(reducefn: ReduceFn<T, V2>, initialfn: JustFn<V2>) => {
-    const reducer = { reducefn, initialfn };
-    return new Composer<T, U, V2, W>(
-      reducer,
-      this.mapper as unknown as MapFn<V2, W>,
-      this.stacker
+  static default = <T, U, V, F>() => {
+    return new Composer<T, U, V, F>(
+      identityReducer as any,
+      identity as any,
+      identityReducer as any
     );
   };
 
-  map = <W2>(mapfn: MapFn<V & U, W2>) => {
-    return new Composer<T, U, V, W2>(
+  reduce = <U2>(reducefn: ReduceFn<T, U2>, initialfn: JustFn<U2>) => {
+    const reducer = { reducefn, initialfn };
+    return new Composer<T, U2, V, F>(
+      reducer,
+      this.mapper as unknown as MapFn<U2 & F, V>,
+      this.stacker,
+      { ...this.state, ...{ reduced: true } }
+    );
+  };
+
+  map = <V2>(mapfn: MapFn<U & F, V2>) => {
+    return new Composer<T, U, V2, F>(
       this.reducer,
       mapfn,
-      this.stacker as unknown as Reducer<W2, W2>
+      this.stacker as unknown as Reducer<V2, V2>,
+      { ...this.state, ...{ mapped: true } }
     );
   };
 
-  stack = <W2 extends Partial<W>>(
-    stackfn: ReduceFn<W2, W2>,
-    initialfn: JustFn<W2>
+  stack = <V2 extends Partial<V>>(
+    stackfn: ReduceFn<V2, V2>,
+    initialfn: JustFn<V2>
   ) => {
     const stacker = { reducefn: stackfn, initialfn };
-    return new Composer<T, U, V, W2>(
+    return new Composer<T, U, V, F>(
       this.reducer,
-      this.mapper as unknown as MapFn<V, W2>,
-      stacker
+      this.mapper,
+      stacker as unknown as Reducer<V, V>,
+      { ...this.state, ...{ stacked: true } }
     );
   };
 }

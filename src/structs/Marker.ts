@@ -33,8 +33,8 @@ export const GroupLabels = {
 export const groups = [4, 3, 2, 1, 132, 131, 130, 129] as const;
 export const transientGroups = [4, 3, 2, 1] as const;
 
-const indices = new Set(groups);
-const indexPositions = {
+const uniqueIndices = new Set(groups);
+const positions = {
   4: new Set<number>(),
   3: new Set<number>(),
   2: new Set<number>(),
@@ -49,83 +49,82 @@ const transient = (x: number) => x & ~128;
 const removeTransient = (x: number) => x | 128;
 
 export default class Marker {
-  indexArray: Accessor<number[]>;
-  setIndexArray: Setter<number[]>;
+  indices: Accessor<number[]>;
+  setIndices: Setter<number[]>;
   factor: Accessor<Factor>;
 
-  transientCases: Set<number>;
-  indexPositions: Record<number, Set<number>>;
+  transientPositions: Set<number>;
+  positions: Record<number, Set<number>>;
 
   constructor(
     public n: Accessor<number>,
     public cases: Accessor<number[]>,
     public group: Accessor<number>
   ) {
-    const [indexArray, setIndexArray] = createSignal(
+    const [indices, setIndices] = createSignal(
       Array(this.n()).fill(Group.Group1)
     );
-    this.indexArray = indexArray;
-    this.setIndexArray = setIndexArray;
+    this.indices = indices;
+    this.setIndices = setIndices;
 
-    this.transientCases = new Set();
-    this.indexPositions = indexPositions;
-    this.indexPositions[Group.Group1] = new Set(
-      Array.from(Array(n()), (_, i) => i)
-    );
+    this.transientPositions = new Set();
+    this.positions = positions;
+    this.positions[Group.Group1] = new Set(Array.from(Array(n()), (_, i) => i));
 
     this.cases = cases;
     this.group = group;
     this.factor = () => {
       return new FactorDiscrete(
-        indices,
-        indexArray(),
-        indexPositions,
+        uniqueIndices,
+        indices(),
+        positions,
         GroupLabels,
         {}
       );
     };
 
     createEffect(() => {
-      const { indexPositions, transientCases } = this;
+      const { positions, transientPositions } = this;
       const [cases, group] = [this.cases(), untrack(this.group)];
-      const indexArray = [...untrack(this.indexArray)];
+      const indices = [...untrack(this.indices)];
 
       if (!cases.length) return;
 
       for (const group of groups) {
-        for (const i of cases) indexPositions[group].delete(i);
+        for (const i of cases) positions[group].delete(i);
       }
 
-      if (group === 1) {
-        transientCases.clear();
+      if (group === 128) {
+        transientPositions.clear();
 
         for (const i of cases) {
-          const index = transient(indexArray[i]);
-          indexArray[i] = index;
-          indexPositions[index].add(i);
-          transientCases.add(i);
+          const index = transient(indices[i]);
+          indices[i] = index;
+          positions[index].add(i);
+          transientPositions.add(i);
         }
       } else {
         for (const i of cases) {
-          indexArray[i] = group;
-          indexPositions[group].add(i);
+          indices[i] = group;
+          positions[group].add(i);
         }
       }
 
-      this.setIndexArray(indexArray);
+      this.setIndices(indices);
     });
   }
 
   clearAll = () => {
     const n = untrack(this.n);
-    for (const group of groups) this.indexPositions[group].clear();
-    for (let i = 0; i < n; i++) this.indexPositions[Group.Group1].add(i);
-    this.setIndexArray(Array(this.n()).fill(Group.Group1));
+    for (const group of groups) this.positions[group].clear();
+    for (let i = 0; i < n; i++) this.positions[Group.Group1].add(i);
+    this.setIndices(Array(this.n()).fill(Group.Group1));
   };
 
   clearTransient = () => {
-    const { indexPositions, transientCases } = this;
-    const indexArray = [...untrack(this.indexArray)];
+    const { positions: indexPositions, transientPositions: transientCases } =
+      this;
+    const indexArray = [...untrack(this.indices)];
 
     for (const group of transientGroups) indexPositions[group].clear();
 
@@ -134,6 +133,6 @@ export default class Marker {
       indexPositions[Group.Group1].add(i);
     }
 
-    this.setIndexArray(indexArray);
+    this.setIndices(indexArray);
   };
 }

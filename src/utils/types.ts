@@ -33,7 +33,13 @@ export type ScalarOf<T> = T extends Numeric
   ? Ref
   : never;
 
+export type VariableOf<T> = T extends Num
+  ? Numeric
+  : T extends Dis
+  ? Discrete
+  : T extends Ref
+  ? Reference
+  : never;
+
 export type RowOf<T extends Cols> = { [key in keyof T]: ScalarOf<T[key]> };
-export type PartialRowOf<T extends Cols> = {
-  [key in keyof T]?: ScalarOf<T[key]>;
-};
+export type ColsOf<T extends Row> = { [key in keyof T]: VariableOf<T[key]> };
