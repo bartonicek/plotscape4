@@ -9,6 +9,11 @@ export type MapFn<T, U> = (next: T) => U;
 export type Reducer<T, U> = { reducefn: ReduceFn<T, U>; initialfn: JustFn<U> };
 
 export type Dict = Record<string, any>;
+
+export type KeysOfType<T extends Record<string, any>, U> = keyof {
+  [key in keyof T as T[key] extends U ? key : never]: U;
+};
+
 export type DropNever<T extends Dict> = {
   [key in keyof T as T[key] extends never ? never : key]: T[key];
 };

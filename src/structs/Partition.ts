@@ -3,7 +3,7 @@ import { Dataframe } from "../structs/Dataframe";
 import { Factor, FactorProduct } from "../structs/Factor";
 import { ref } from "../structs/Scalar";
 import { keys, values } from "../utils/funs";
-import { Cols, JustFn, MapFn, ReduceFn, Scalar } from "../utils/types";
+import { Cols, JustFn, MapFn, ReduceFn, RowOf, Scalar } from "../utils/types";
 import { IndexMap } from "./IndexMap";
 
 export const stackSymbol = Symbol.for("stack");
@@ -50,6 +50,23 @@ export class Partition<T extends Cols> {
     this.partData = createMemo(() => this.getPartData());
   };
 
+  reduce = <U>(reducefn: ReduceFn<RowOf<T>, U>, init: JustFn<U>) => {
+    this.reducefn = reducefn;
+    this.reduceinit = init;
+    return this;
+  };
+
+  map = (mapfn: MapFn<any, any>) => {
+    this.mapfn = mapfn;
+    return this;
+  };
+
+  stack = (stackfn: ReduceFn<any, any>, init: JustFn<any>) => {
+    this.stackfn = stackfn;
+    this.stackinit = init;
+    return this;
+  };
+
   getParts = () => {
     const factor = this.factor();
     const { data, parent } = this;
@@ -57,7 +74,7 @@ export class Partition<T extends Cols> {
     const indices = factor.indices();
 
     const parentFactor = parent ? untrack(parent.factor) : undefined;
-    const parentParts = parent?.parts() ?? {};
+    const parentParts = parent?.parts?.() ?? {};
     for (const parentPart of values(parentParts)) {
       parentPart[stackSymbol] = this.stackinit();
     }
