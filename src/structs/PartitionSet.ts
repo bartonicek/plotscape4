@@ -34,22 +34,23 @@ export class PartitionSet<T extends Cols> {
     reducefn: ReduceFn<RowOf<T>, U>,
     init: JustFn<U>
   ) => {
-    this.partitions[index].reduce(reducefn, init);
+    this.partitions[index].setReduce(reducefn, init);
     return this;
   };
 
   reduce = <U>(reducefn: ReduceFn<RowOf<T>, U>, init: JustFn<U>) => {
-    for (const partition of this.partitions) partition.reduce(reducefn, init);
+    for (const partition of this.partitions)
+      partition.setReduce(reducefn, init);
     return this;
   };
 
   mapAt = <U extends Row, V extends Row>(index: number, mapfn: MapFn<U, V>) => {
-    this.partitions[index].map(mapfn);
+    this.partitions[index].setMap(mapfn);
     return this;
   };
 
   map = <U extends Row, V extends Row>(mapfn: MapFn<U, V>) => {
-    for (const partition of this.partitions) partition.map(mapfn);
+    for (const partition of this.partitions) partition.setMap(mapfn);
     return this;
   };
 
@@ -58,12 +59,12 @@ export class PartitionSet<T extends Cols> {
     stackfn: ReduceFn<U, U>,
     init: JustFn<U>
   ) => {
-    this.partitions[index].stack(stackfn, init);
+    this.partitions[index].setStack(stackfn, init);
     return this;
   };
 
   stack = <U extends Row>(stackfn: ReduceFn<U, U>, init: JustFn<U>) => {
-    for (const partition of this.partitions) partition.stack(stackfn, init);
+    for (const partition of this.partitions) partition.setStack(stackfn, init);
     return this;
   };
 

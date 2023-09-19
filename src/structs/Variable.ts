@@ -1,4 +1,5 @@
 import { minMaxSum } from "../utils/funs";
+import { JustFn } from "../utils/types";
 import { FactorBinned, FactorDiscrete } from "./Factor";
 import { Dis, Num, Ref } from "./Scalar";
 import { ValueLike, view } from "./ValueLike";
@@ -21,7 +22,7 @@ export class Numeric {
     return FactorBinned.from(this.array, width?.value(), anchor?.value());
   };
 
-  ith = (index: number) => new Num(view(this.array, index));
+  ith = (indexfn: JustFn<number>) => new Num(view(this.array, indexfn));
   push = (scalar: Num) => {
     const value = scalar.value();
 
@@ -46,7 +47,7 @@ export class Discrete {
 
   factor = () => FactorDiscrete.from(this.array);
 
-  ith = (index: number) => new Dis(view(this.array, index));
+  ith = (indexfn: JustFn<number>) => new Dis(view(this.array, indexfn));
   push = (scalar: Dis) => {
     const value = scalar.value();
 
@@ -67,7 +68,7 @@ export class Reference {
   static default = () => new Reference([]);
   static from = (array: object[]) => new Reference(array);
 
-  ith = (index: number) => new Ref(view(this.array, index));
+  ith = (indexfn: JustFn<number>) => new Ref(view(this.array, indexfn));
   push = (scalar: Ref) => {
     const value = scalar.value();
 

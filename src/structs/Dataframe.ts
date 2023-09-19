@@ -52,7 +52,9 @@ export class Dataframe<T extends Cols> {
 
   row = (index: number) => {
     const row = {} as Record<string, any>;
-    for (const [k, v] of entries(this.cols)) row[k as string] = v.ith(index);
+    for (const [k, v] of entries(this.cols)) {
+      row[k as string] = v.ith(() => index);
+    }
     return row as { [key in keyof T]: ScalarOf<T[key]> };
   };
 

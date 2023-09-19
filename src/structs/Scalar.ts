@@ -1,3 +1,4 @@
+import { JustFn } from "../utils/types";
 import { ValueLike, val } from "./ValueLike";
 import { Discrete, Numeric, Reference } from "./Variable";
 
@@ -10,6 +11,9 @@ export class Num {
 
   value = () => this.valueLike.value();
   toVariable = () => new Numeric([this.value()]);
+  setIndexFn = (indexfn: JustFn<number>) => {
+    this.valueLike.setIndexFn?.(indexfn);
+  };
 
   inc = () => num(this.value() + 1);
   dec = () => num(this.value() - 1);
@@ -29,6 +33,9 @@ export class Dis {
 
   value = () => this.valueLike.value();
   toVariable = () => new Discrete([this.value()]);
+  setIndexFn = (indexfn: JustFn<number>) => {
+    this.valueLike.setIndexFn?.(indexfn);
+  };
 
   paste = (other: Dis) => dis(this.value() + other.value());
 }
@@ -38,4 +45,7 @@ export class Ref {
 
   value = () => this.valueLike.value();
   toVariable = () => new Reference([this.value()]);
+  setIndexFn = (indexfn: JustFn<number>) => {
+    this.valueLike.setIndexFn?.(indexfn);
+  };
 }

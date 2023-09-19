@@ -5,6 +5,7 @@ import { ref } from "../structs/Scalar";
 import { keys, values } from "../utils/funs";
 import { Cols, JustFn, MapFn, ReduceFn, RowOf, Scalar } from "../utils/types";
 import { IndexMap } from "./IndexMap";
+import { SlidingRow } from "./SlidingRow";
 
 export const stackSymbol = Symbol.for("stack");
 export const parentSymbol = Symbol.for("parent");
@@ -50,22 +51,52 @@ export class Partition<T extends Cols> {
     this.partData = createMemo(() => this.getPartData());
   };
 
-  reduce = <U>(reducefn: ReduceFn<RowOf<T>, U>, init: JustFn<U>) => {
+  setReduce = <U>(reducefn: ReduceFn<RowOf<T>, U>, init: JustFn<U>) => {
     this.reducefn = reducefn;
     this.reduceinit = init;
     return this;
   };
 
-  map = (mapfn: MapFn<any, any>) => {
+  setMap = (mapfn: MapFn<any, any>) => {
     this.mapfn = mapfn;
     return this;
   };
 
-  stack = (stackfn: ReduceFn<any, any>, init: JustFn<any>) => {
+  setStack = (stackfn: ReduceFn<any, any>, init: JustFn<any>) => {
     this.stackfn = stackfn;
     this.stackinit = init;
     return this;
   };
+
+  // reduce = () => {
+  //   const { data, parent } = this;
+  //   const factor = this.factor();
+  //   const indices = factor.indices();
+
+  //   const parts: Record<number, Record<string | symbol, Scalar>> = {};
+  //   const parentFactor = parent ? untrack(parent.factor) : undefined;
+  //   const parentParts = parent?.parts?.() ?? {};
+  //   const indexMap = new IndexMap(indices, parentFactor?.indices());
+
+  //   for (const parentPart of values(parentParts)) {
+  //     parentPart[stackSymbol] = this.stackinit();
+  //   }
+
+  //   const row = SlidingRow.of(data.row(0), 0);
+
+  //   // Iterate length of data (n)
+  //   for (let i = 0; i < indices.length; i++) {
+  //     const index = indices[i];
+
+  //     if (!(index in parts)) parts[index] = this.reduceinit();
+  //     parts[index] = this.reducefn(parts[index], row.values());
+  //     row.slide();
+  //   }
+
+  //   return parts;
+  // };
+
+  // map = () => {};
 
   getParts = () => {
     const factor = this.factor();
@@ -82,12 +113,15 @@ export class Partition<T extends Cols> {
     const indexMap = new IndexMap(indices, parentFactor?.indices());
     const parts: Record<number, Record<string | symbol, Scalar>> = {};
 
+    const row = SlidingRow.of(data.row(0), 0);
+
     // Iterate length of data (n): reduce
     for (let i = 0; i < indices.length; i++) {
       const index = indices[i];
 
       if (!(index in parts)) parts[index] = this.reduceinit();
-      parts[index] = this.reducefn(parts[index], data.row(i));
+      parts[index] = this.reducefn(parts[index], row.values());
+      row.slide();
     }
 
     // Iterate parts: map and stack
