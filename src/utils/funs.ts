@@ -1,19 +1,26 @@
 import { Dict, Fn, Scalar, ValueOf } from "./types";
 
 export const call = (fn: Fn) => fn();
-export const just =
+export const lazy =
   <T>(x: T) =>
   () =>
     x;
 export const identity = <T>(x: T) => x;
+export const firstArgument = <T>(x: T, y: any) => x;
 export const secondArgument = <T>(x: any, y: T) => y;
 export const POJO = () => ({});
+
+export const diff = (x: number, y: number) => x - y;
 
 export const toInt = (x: string) => parseInt(x, 10);
 
 export const keys = <T extends Dict, K extends keyof T>(x: T) => {
   return Object.keys(x) as K[];
 };
+export const allKeys = <T extends Dict, K extends keyof T>(x: T) => {
+  return Reflect.ownKeys(x) as K[];
+};
+
 export const values = <T extends Dict, K extends keyof T>(x: T) => {
   return Object.values(x) as T[K][];
 };

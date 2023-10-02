@@ -1,5 +1,5 @@
 import { createSignal } from "solid-js";
-import { just } from "../../utils/funs";
+import { lazy } from "../../utils/funs";
 import graphicParameters from "../graphicParameters";
 
 const makePlotStore = () => {
@@ -16,10 +16,10 @@ const makePlotStore = () => {
   const [clickY, setClickY] = createSignal(0);
 
   const { marginLines, fontsize } = graphicParameters;
-  const marginBottom = just(marginLines[0] * fontsize);
-  const marginLeft = just(marginLines[1] * fontsize);
-  const marginTop = just(marginLines[2] * fontsize);
-  const marginRight = just(marginLines[3] * fontsize);
+  const marginBottom = lazy(marginLines[0] * fontsize);
+  const marginLeft = lazy(marginLines[1] * fontsize);
+  const marginTop = lazy(marginLines[2] * fontsize);
+  const marginRight = lazy(marginLines[3] * fontsize);
 
   const innerClickX = () => {
     return clickX() - marginLeft();

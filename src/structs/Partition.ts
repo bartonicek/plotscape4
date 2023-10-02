@@ -3,8 +3,9 @@ import { Dataframe } from "../structs/Dataframe";
 import { Factor, FactorProduct } from "../structs/Factor";
 import { ref } from "../structs/Scalar";
 import { keys, values } from "../utils/funs";
-import { Cols, JustFn, MapFn, ReduceFn, RowOf, Scalar } from "../utils/types";
+import { Cols, RowOf, Scalar } from "../utils/types";
 import { IndexMap } from "./IndexMap";
+import { Recipe } from "./Recipe";
 import { SlidingRow } from "./SlidingRow";
 
 export const stackSymbol = Symbol.for("stack");
@@ -17,110 +18,143 @@ export class Partition<T extends Cols> {
   constructor(
     public factor: Accessor<Factor>,
     public data: Dataframe<T>,
-    public reducefn: ReduceFn<any, any>,
-    public reduceinit: JustFn<any>,
-    public mapfn: MapFn<any, any>,
-    public stackfn: ReduceFn<any, any>,
-    public stackinit: JustFn<any>,
+    public recipe: Recipe<RowOf<T>, any, any>,
     public parent?: Partition<any>
   ) {
     this.parts = createMemo(() => this.getParts());
     this.partData = createMemo(() => this.getPartData());
   }
 
-  nest = (childFactor: Accessor<Factor>) => {
-    const { data, factor, reducefn, reduceinit, mapfn, stackfn, stackinit } =
-      this;
+  nest = (childFactor: Accessor<Factor>, recipe?: Recipe<any, any, any>) => {
+    const { data, factor } = this;
+    recipe = recipe ?? this.recipe;
 
     const product = () => FactorProduct.from(factor(), childFactor());
-    const childPartition = new Partition(
-      product,
-      data,
-      reducefn,
-      reduceinit,
-      mapfn,
-      stackfn,
-      stackinit,
-      this
-    );
+    const childPartition = new Partition(product, data, recipe, this);
     return childPartition;
   };
 
   update = () => {
-    this.parts = createMemo(() => this.getParts());
     this.partData = createMemo(() => this.getPartData());
   };
 
-  setReduce = <U>(reducefn: ReduceFn<RowOf<T>, U>, init: JustFn<U>) => {
-    this.reducefn = reducefn;
-    this.reduceinit = init;
-    return this;
+  reduce = () => {
+    const factor = this.factor();
+    if (!this.recipe.state.reduced) return this.data;
+    const { data, parent, recipe } = this;
+
+    const parentFactor = parent ? untrack(parent.factor) : undefined;
+    const parentParts = parent?.parts?.() ?? {};
+    for (const parentPart of values(parentParts)) {
+      parentPart[stackSymbol] = recipe.stackinit();
+    }
+
+    const indices = factor.indices();
+    const parentIndices = parentFactor?.indices();
+
+    const parts: Record<number, Record<string | symbol, Scalar>> = {};
+    const dataRow = SlidingRow.from(data, 0);
+    const parentIndexMap: Record<number, number> = {};
+
+    // Reduce data (length n)
+    for (let i = 0; i < indices.length; i++) {
+      const index = indices[i];
+      if (!(index in parts)) {
+        parts[index] = recipe.reduceinit();
+        parentIndexMap[index] = parentIndices?.[i] ?? 0;
+      }
+      parts[index] = recipe.reducefn(parts[index], dataRow.values());
+      dataRow.slide();
+    }
+
+    let reducedData;
+
+    // Append parent, positions, and labels (length k)
+    for (const index of factor.uniqueIndices()) {
+      parts[index][parentSymbol] = ref(parentIndexMap[index]);
+      parts[index].positions = ref(factor.positions(index));
+      Object.assign(parts[index], factor.label(index));
+      if (!reducedData) reducedData = Dataframe.fromRow(parts[index], index);
+      else reducedData.push(parts[index], index);
+    }
+
+    return reducedData!;
   };
 
-  setMap = (mapfn: MapFn<any, any>) => {
-    this.mapfn = mapfn;
-    return this;
+  mapAndStack = () => {
+    const reducedData = this.reduce();
+    const parentData = this.parent?.mapAndStack();
+
+    const { recipe } = this;
+
+    const row1 = reducedData.row(0);
+    const mappedRow1 = recipe.mapfn(row1);
+    mappedRow1.parent = row1.parent;
+    mappedRow1.positions = row1.positions;
+    mappedRow1.group = row1.group;
+    mappedRow1.transient = row1.transient;
+    mappedRow1.layer = row1.layer;
+
+    const mappedAndStackedData = Dataframe.fromRow(mappedRow1).empty();
+
+    for (let row of reducedData) {
+      const { positions, group, transient, layer } = row;
+
+      const parent = row[parentSymbol];
+
+      if (parentData) {
+        row.parent = parentData.row(row[parentSymbol].value());
+      }
+
+      row = recipe.mapfn(row);
+
+      row.parent = parent;
+      row.positions = positions;
+      row.group = group;
+      row.transient = transient;
+      row.layer = layer;
+
+      console.log(row);
+
+      if (!row.parent) {
+        mappedAndStackedData.push(row);
+        continue;
+      }
+
+      const parentRow = parentData?.row(row[parentSymbol]);
+      const stacked = recipe.stackfn(parentRow[stackSymbol], row);
+      parentValue[stackSymbol] = stacked;
+      Object.assign(row, stacked);
+
+      mappedAndStackedData.push(row);
+    }
+
+    return mappedAndStackedData;
   };
-
-  setStack = (stackfn: ReduceFn<any, any>, init: JustFn<any>) => {
-    this.stackfn = stackfn;
-    this.stackinit = init;
-    return this;
-  };
-
-  // reduce = () => {
-  //   const { data, parent } = this;
-  //   const factor = this.factor();
-  //   const indices = factor.indices();
-
-  //   const parts: Record<number, Record<string | symbol, Scalar>> = {};
-  //   const parentFactor = parent ? untrack(parent.factor) : undefined;
-  //   const parentParts = parent?.parts?.() ?? {};
-  //   const indexMap = new IndexMap(indices, parentFactor?.indices());
-
-  //   for (const parentPart of values(parentParts)) {
-  //     parentPart[stackSymbol] = this.stackinit();
-  //   }
-
-  //   const row = SlidingRow.of(data.row(0), 0);
-
-  //   // Iterate length of data (n)
-  //   for (let i = 0; i < indices.length; i++) {
-  //     const index = indices[i];
-
-  //     if (!(index in parts)) parts[index] = this.reduceinit();
-  //     parts[index] = this.reducefn(parts[index], row.values());
-  //     row.slide();
-  //   }
-
-  //   return parts;
-  // };
-
-  // map = () => {};
 
   getParts = () => {
     const factor = this.factor();
-    const { data, parent } = this;
+    const { data, parent, recipe } = this;
 
     const indices = factor.indices();
 
     const parentFactor = parent ? untrack(parent.factor) : undefined;
     const parentParts = parent?.parts?.() ?? {};
     for (const parentPart of values(parentParts)) {
-      parentPart[stackSymbol] = this.stackinit();
+      parentPart[stackSymbol] = recipe.stackinit();
     }
 
     const indexMap = new IndexMap(indices, parentFactor?.indices());
     const parts: Record<number, Record<string | symbol, Scalar>> = {};
 
-    const row = SlidingRow.of(data.row(0), 0);
+    const row = SlidingRow.from(data, 0);
 
     // Iterate length of data (n): reduce
     for (let i = 0; i < indices.length; i++) {
       const index = indices[i];
 
-      if (!(index in parts)) parts[index] = this.reduceinit();
-      parts[index] = this.reducefn(parts[index], row.values());
+      if (!(index in parts)) parts[index] = recipe.reduceinit();
+      parts[index] = recipe.reducefn(parts[index], row.values());
       row.slide();
     }
 
@@ -132,7 +166,7 @@ export class Partition<T extends Cols> {
       const label = factor.label(index);
 
       Object.assign(part, label, { parent: parentPart });
-      part = this.mapfn(parts[index]);
+      part = recipe.mapfn(parts[index]);
       part.positions = ref(factor.positions(index));
 
       if (label.group) {
@@ -147,7 +181,7 @@ export class Partition<T extends Cols> {
       }
 
       part.parent = ref(parentPart);
-      const stacked = this.stackfn(parentPart[stackSymbol], part);
+      const stacked = recipe.stackfn(parentPart[stackSymbol], part);
 
       parentPart[stackSymbol] = stacked;
       Object.assign(part, stacked);

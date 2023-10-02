@@ -1,17 +1,22 @@
 import { values } from "../utils/funs";
-import { JustFn, Row } from "../utils/types";
+import { Cols, Lazy, RowOf } from "../utils/types";
+import { Dataframe } from "./Dataframe";
 
-export class SlidingRow<T extends Row> {
-  indexfn: JustFn<number>;
-  constructor(public vals: T, public index: number) {
+export class SlidingRow<T extends Cols> {
+  row: RowOf<T>;
+  indexfn: Lazy<number>;
+
+  constructor(public data: Dataframe<T>, public index: number) {
+    this.row = data.row(index);
     this.indexfn = () => this.index;
-    for (const val of values(vals)) val.setIndexFn(this.indexfn);
+
+    for (const val of values(this.row)) val.setIndexFn(this.indexfn);
   }
 
-  static of = <T extends Row>(vals: T, index: number) => {
-    return new SlidingRow(vals, index);
+  static from = <T extends Cols>(data: Dataframe<T>, index: number) => {
+    return new SlidingRow(data, index);
   };
 
-  values = () => this.vals;
+  values = () => this.row;
   slide = () => this.index++;
 }

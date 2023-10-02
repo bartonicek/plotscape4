@@ -15,6 +15,7 @@ import makeScales, { PlotScales } from "./makeScales";
 
 export class Plot {
   container: HTMLDivElement;
+  // state: PlotStateMachine;
 
   store: PlotStore;
   expanses: PlotExpanses;
@@ -33,8 +34,13 @@ export class Plot {
     this.container = container;
     scene.app.appendChild(container);
 
+    // this.state = new PlotStateMachine(this);
+
     window.addEventListener("resize", throttle(this.onResize, 50));
     container.addEventListener("mousedown", this.onMouseDown);
+
+    // container.addEventListener("mousedown", this.state.dispatch);
+
     container.addEventListener("contextmenu", this.onContextMenu);
     container.addEventListener("mouseup", this.onMouseUp);
     container.addEventListener("mousemove", throttle(this.onMouseMove, 30));
@@ -60,13 +66,33 @@ export class Plot {
     this.pushDecoration(new AxisLabels(this, "x"));
     this.pushDecoration(new AxisLabels(this, "y"));
 
-    const { x, y } = graphicParameters.defaultNorm;
+    const { defaultNorm } = graphicParameters;
     this.keyActions = {
       KeyR: () => {
-        this.store.setNormXLower(x.lower);
-        this.store.setNormYLower(y.lower);
-        this.store.setNormXUpper(x.upper);
-        this.store.setNormYUpper(y.upper);
+        this.store.setNormXLower(defaultNorm.x.lower);
+        this.store.setNormYLower(defaultNorm.y.lower);
+        this.store.setNormXUpper(defaultNorm.x.upper);
+        this.store.setNormYUpper(defaultNorm.y.upper);
+      },
+      KeyZ: () => {
+        // const { clickX, clickY, mouseX, mouseY } = this.store;
+        // const { x, y } = this.scales.inner.pct;
+        // const [xLower, xUpper] = [clickX, mouseX]
+        //   .map(call)
+        //   .sort(diff)
+        //   .map(x.pushforward);
+        // const [yLower, yUpper] = [clickY, mouseY]
+        //   .map(call)
+        //   .sort(diff)
+        //   .map(y.pushforward);
+        // const xRange = 1 / (xUpper - xLower);
+        // const yRange = 1 / (yUpper - yLower);
+        // this.store.setNormXLower(-xLower * xRange);
+        // this.store.setNormXUpper(-xLower * xRange + xRange);
+        // this.store.setNormYLower(-yLower * yRange);
+        // this.store.setNormYUpper(-yLower * yRange + yRange);
+        // scene.marker.clearTransient();
+        // drawClear(this.contexts.user);
       },
     };
 
@@ -127,7 +153,7 @@ export class Plot {
     batch(() => {
       setClickX(x), setClickY(y), setMouseX(x), setMouseY(y);
     });
-    1;
+
     const { setSelectedCases } = this.scene.store;
 
     if (event.button === 0) {
@@ -196,6 +222,7 @@ export class Plot {
   };
 
   onKeyDown = (event: KeyboardEvent) => {
+    if (!this.store.active()) return;
     this.keyActions[event.code]?.();
   };
 

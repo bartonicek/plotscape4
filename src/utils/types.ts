@@ -1,14 +1,19 @@
 import { Dis, Num, Ref } from "../structs/Scalar";
 import { Discrete, Numeric, Reference, Variable } from "../structs/Variable";
 
+export type Primitive = number | string | boolean | Function;
+export type Flatten<T> = T extends Primitive
+  ? T
+  : { [key in keyof T]: Flatten<T[key]> };
+export type Lazy<T> = () => T;
+
 export type Fn = (...args: any[]) => any;
-export type JustFn<T> = () => T;
 export type ReduceFn<T, U> = (prev: U, next: T) => U;
 export type MapFn<T, U> = (next: T) => U;
 
-export type Reducer<T, U> = { reducefn: ReduceFn<T, U>; initialfn: JustFn<U> };
+export type Reducer<T, U> = { reducefn: ReduceFn<T, U>; initialfn: Lazy<U> };
 
-export type Dict = Record<string, any>;
+export type Dict = Record<string | symbol | number, any>;
 
 export type KeysOfType<T extends Record<string, any>, U> = keyof {
   [key in keyof T as T[key] extends U ? key : never]: U;
@@ -19,8 +24,8 @@ export type DropNever<T extends Dict> = {
 };
 
 export type Scalar = Num | Dis | Ref;
-export type Row = Record<string | symbol, Scalar>;
-export type Cols = Record<string | symbol, Variable>;
+export type Row = Record<string | symbol | number, Scalar>;
+export type Cols = Record<string | symbol | number, Variable>;
 
 export type ValueOf<T extends Scalar> = T extends Num
   ? number

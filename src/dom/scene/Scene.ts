@@ -5,6 +5,10 @@ import { Cols } from "../../utils/types";
 import { Plot } from "../plot/Plot";
 import makeSceneStore, { SceneStore } from "./makeSceneStore";
 
+const isScene = (target: Element) => {
+  return target.classList.contains("plotscape-scene");
+};
+
 export class Scene<T extends Cols> {
   nPlots: number;
   nCols: number;
@@ -49,6 +53,7 @@ export class Scene<T extends Cols> {
   setRowsCols = (rows: number, cols: number) => {
     document.documentElement.style.setProperty("--ncols", cols.toString());
     document.documentElement.style.setProperty("--nrows", rows.toString());
+    for (const plot of this.plots) plot.resize();
   };
 
   pushPlot = (plot: Plot) => {
@@ -59,26 +64,23 @@ export class Scene<T extends Cols> {
     this.nRows = Math.ceil(this.nPlots / this.nCols);
 
     this.setRowsCols(this.nRows, this.nCols);
-    this.plots.forEach((plot) => plot.resize());
+  };
+
+  deactivateAll = () => {
+    for (const plot of this.plots) plot.deactivate();
   };
 
   onMouseDown = (event: MouseEvent) => {
     // Clear drag rectangles
-    this.plots.forEach((plot) => drawClear(plot.contexts.user));
+    for (const plot of this.plots) drawClear(plot.contexts.user);
 
-    const isScene = (target: Element) => {
-      return target.classList.contains("plotscape-scene");
-    };
-
-    const target = event.target;
+    const { target } = event;
     // Only deactivate if clicked outside of any plot area
-    if (target instanceof Element && isScene(target)) {
-      this.plots.forEach((plot) => plot.deactivate());
-    }
+    if (target instanceof Element && isScene(target)) this.deactivateAll();
   };
 
   onDoubleClick = () => {
-    this.plots.forEach((plot) => plot.deactivate());
+    for (const plot of this.plots) this.deactivateAll();
     this.marker.clearAll();
     this.store.setGroup(128);
     this.store.setSelectedCases([]);

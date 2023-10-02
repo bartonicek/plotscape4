@@ -1,11 +1,22 @@
 import { minMaxSum } from "../utils/funs";
-import { JustFn } from "../utils/types";
+import { Lazy } from "../utils/types";
 import { FactorBinned, FactorDiscrete } from "./Factor";
 import { Dis, Num, Ref } from "./Scalar";
 import { ValueLike, view } from "./ValueLike";
 
-export type ScalarOf<T extends Variable> = T extends Numeric ? Num : Dis;
+// export type VariableLike = {
+//   ith: (indexfn: Lazy<number>) => ScalarLike<any>;
+//   push: (scalar: ScalarLike<any>) => number;
+// };
+
 export type Variable = Numeric | Discrete | Reference;
+export type ScalarOf<T extends Variable> = T extends Numeric
+  ? Num
+  : T extends Discrete
+  ? Dis
+  : T extends Reference
+  ? Ref
+  : never;
 
 export class Numeric {
   meta: { n: number; min: number; max: number; sum: number };
@@ -18,11 +29,7 @@ export class Numeric {
   static default = () => new Numeric([]);
   static from = (array: number[]) => new Numeric(array);
 
-  bin = (width?: ValueLike<number>, anchor?: ValueLike<number>) => {
-    return FactorBinned.from(this.array, width?.value(), anchor?.value());
-  };
-
-  ith = (indexfn: JustFn<number>) => new Num(view(this.array, indexfn));
+  ith = (indexfn: Lazy<number>) => new Num(view(this.array, indexfn));
   push = (scalar: Num) => {
     const value = scalar.value();
 
@@ -32,6 +39,19 @@ export class Numeric {
     this.meta.n++;
 
     return this.array.push(value);
+  };
+
+  bin = (width?: ValueLike<number>, anchor?: ValueLike<number>) => {
+    return FactorBinned.from(this.array, width?.value(), anchor?.value());
+  };
+
+  empty = () => {
+    this.array.length = 0;
+    this.meta.n = 0;
+    this.meta.min = Infinity;
+    this.meta.max = -Infinity;
+    this.meta.sum = 0;
+    return this;
   };
 }
 
@@ -47,7 +67,7 @@ export class Discrete {
 
   factor = () => FactorDiscrete.from(this.array);
 
-  ith = (indexfn: JustFn<number>) => new Dis(view(this.array, indexfn));
+  ith = (indexfn: Lazy<number>) => new Dis(view(this.array, indexfn));
   push = (scalar: Dis) => {
     const value = scalar.value();
 
@@ -55,6 +75,12 @@ export class Discrete {
     this.meta.n++;
 
     return this.array.push(value);
+  };
+
+  empty = () => {
+    this.array.length = 0;
+    this.meta.n = 0;
+    this.meta.values = new Set<string>();
   };
 }
 
@@ -68,11 +94,16 @@ export class Reference {
   static default = () => new Reference([]);
   static from = (array: object[]) => new Reference(array);
 
-  ith = (indexfn: JustFn<number>) => new Ref(view(this.array, indexfn));
+  ith = (indexfn: Lazy<number>) => new Ref(view(this.array, indexfn));
   push = (scalar: Ref) => {
     const value = scalar.value();
 
     this.meta.n++;
     return this.array.push(value);
+  };
+
+  empty = () => {
+    this.array.length = 0;
+    this.meta.n = 0;
   };
 }

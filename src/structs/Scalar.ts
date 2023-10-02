@@ -1,4 +1,4 @@
-import { JustFn } from "../utils/types";
+import { Lazy } from "../utils/types";
 import { ValueLike, val } from "./ValueLike";
 import { Discrete, Numeric, Reference } from "./Variable";
 
@@ -6,12 +6,18 @@ export const num = (x: number) => new Num(val(x));
 export const dis = (x: string) => new Dis(val(x));
 export const ref = (x: any) => new Ref(val(x));
 
+// export type ScalarLike<T> = {
+//   value: () => T;
+//   toVariable: () => any;
+//   setIndexFn: (indexfn: Lazy<number>) => void;
+// };
+
 export class Num {
   constructor(private valueLike: ValueLike<number>) {}
 
   value = () => this.valueLike.value();
   toVariable = () => new Numeric([this.value()]);
-  setIndexFn = (indexfn: JustFn<number>) => {
+  setIndexFn = (indexfn: Lazy<number>) => {
     this.valueLike.setIndexFn?.(indexfn);
   };
 
@@ -33,7 +39,7 @@ export class Dis {
 
   value = () => this.valueLike.value();
   toVariable = () => new Discrete([this.value()]);
-  setIndexFn = (indexfn: JustFn<number>) => {
+  setIndexFn = (indexfn: Lazy<number>) => {
     this.valueLike.setIndexFn?.(indexfn);
   };
 
@@ -45,7 +51,7 @@ export class Ref {
 
   value = () => this.valueLike.value();
   toVariable = () => new Reference([this.value()]);
-  setIndexFn = (indexfn: JustFn<number>) => {
+  setIndexFn = (indexfn: Lazy<number>) => {
     this.valueLike.setIndexFn?.(indexfn);
   };
 }

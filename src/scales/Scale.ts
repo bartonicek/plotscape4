@@ -10,7 +10,7 @@ export type Scale = {
   setDomain?: (lower: any, upper: any) => Scale;
   setNorm: (lower: any, upper: any) => Scale;
   setCodomain: (lower: any, upper: any) => Scale;
-  setValues?: (values: ValueLike<any>) => Scale;
+  setValues?: (values: ValueLike<string[]>) => Scale;
 };
 
 export class ScaleLinear implements Scale {

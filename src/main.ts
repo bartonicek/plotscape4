@@ -2,8 +2,7 @@ import { createRoot } from "solid-js";
 import { Scene } from "./dom/scene/Scene";
 import { Dataframe } from "./structs/Dataframe";
 import "./style.css";
-import { entries, getData } from "./utils/funs";
-import { KeysOfType } from "./utils/types";
+import { getData } from "./utils/funs";
 import { BarPlot } from "./wrappers.ts/BarPlot";
 import { HistoPlot } from "./wrappers.ts/HistoPlot";
 
@@ -19,28 +18,9 @@ const dataMpg = Dataframe.parseCols(mpg, {
 
 createRoot(() => {
   const scene1 = new Scene(app, dataMpg);
-  const barplot1 = new BarPlot(scene1, { var1: "drv" });
+  const barplot1 = new BarPlot(scene1, { var1: "manufacturer" });
   const histoplot1 = new HistoPlot(scene1, { var1: "hwy" });
+  scene1.setRowsCols(2, 1);
+
+  barplot1.plot.store.setClickX(100);
 });
-
-const data = {
-  name: ["Bob", "Alice", "John"],
-  income: [100, 200, 150],
-  drives: [true, false, true],
-};
-
-const select = <
-  T extends Record<string, any[]>,
-  U extends { [key in string]: KeysOfType<T, number[]> }
->(
-  data: T,
-  mapping: U
-) => {
-  const result = {} as { [key in keyof U]: T[U[key]] };
-  for (const [k, v] of entries(mapping)) result[k] = data[v];
-  return result;
-};
-
-type X = KeysOfType<typeof data, number[]>;
-
-const x = select(data, { var1: "income" });

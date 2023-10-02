@@ -1,20 +1,38 @@
-import { entries, unwrapAll } from "../utils/funs";
-import { Cols, Dict, RowOf } from "../utils/types";
+import { allKeys, entries, lazy, unwrapAll } from "../utils/funs";
+import { Cols, RowOf } from "../utils/types";
 import { Discrete, Numeric, ScalarOf } from "./Variable";
 
 export class Dataframe<T extends Cols> {
-  meta: Dict;
+  meta: { n: number; keys: (string | symbol)[] };
+  rowIds: Record<number, number>;
 
-  constructor(public cols: T) {
-    this.meta = { n: Object.values(cols)[0].meta.n };
+  constructor(public cols: T, rowIds?: Record<number, number>) {
+    const n = Object.values(cols)[0].meta.n;
+    this.meta = { n, keys: Reflect.ownKeys(cols) };
+    this.rowIds = rowIds ?? {};
+    if (!rowIds) for (let i = 0; i < n; i++) this.rowIds[i] = i;
   }
 
-  static from = <T extends Cols>(cols: T) => new Dataframe(cols);
-  static fromRow = <T extends Cols>(row: RowOf<T>) => {
-    const cols = {} as T;
-    for (const [k, v] of entries(row)) if (v) cols[k] = v.toVariable() as any;
-    return Dataframe.from(cols);
+  static from = <T extends Cols>(cols: T, rowIds?: Record<number, number>) => {
+    return new Dataframe(cols, rowIds);
   };
+
+  static fromRow = <T extends Cols>(row: RowOf<T>, id?: number) => {
+    const cols = {} as T;
+
+    for (const k of allKeys(row)) {
+      if (row[k]) cols[k] = row[k].toVariable() as any;
+    }
+
+    return Dataframe.from(cols, { [id ?? 0]: 0 });
+  };
+
+  static fromRows = <T extends Cols>(rows: RowOf<T>[]) => {
+    const data = Dataframe.fromRow(rows[0]);
+    for (let i = 1; i < rows.length; i++) data.push(rows[i]);
+    return data;
+  };
+
   static parseCols = <
     U extends Record<string, "numeric" | "discrete">,
     V extends Record<keyof U, any[]>
@@ -39,9 +57,18 @@ export class Dataframe<T extends Cols> {
     return Dataframe.from(cols);
   };
 
-  push = (row: RowOf<T>) => {
-    for (const [k, v] of entries(row)) this.cols[k].push(v as any);
+  push = (row: RowOf<T>, id?: number) => {
+    this.rowIds[id ?? this.meta.n] = this.meta.n;
+    for (const k of allKeys(row)) {
+      if (this.cols[k]) this.cols[k].push(row[k] as any);
+    }
     return ++this.meta.n;
+  };
+
+  empty = () => {
+    for (const k of this.meta.keys) this.cols[k].empty();
+    this.meta.n = 0;
+    return this;
   };
 
   select = <U extends Record<string, keyof T>>(keyMap: U) => {
@@ -52,10 +79,15 @@ export class Dataframe<T extends Cols> {
 
   row = (index: number) => {
     const row = {} as Record<string, any>;
-    for (const [k, v] of entries(this.cols)) {
-      row[k as string] = v.ith(() => index);
-    }
+    const { keys } = this.meta as { keys: any[] };
+    for (const k of keys) row[k] = this.cols[k].ith(lazy(index));
     return row as { [key in keyof T]: ScalarOf<T[key]> };
+  };
+
+  rows = () => {
+    const result = [];
+    for (const row of this) result.push(row);
+    return result;
   };
 
   unwrapRow = (index: number) => unwrapAll(this.row(index));

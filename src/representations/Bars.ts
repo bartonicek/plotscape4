@@ -23,7 +23,7 @@ export default class Bars implements Representation {
     const widthPct = this.widthPct();
 
     const data1 = partData(1);
-    const data2 = partData(2) as any;
+    const data2 = partData(2);
 
     const initx1 = scaleX(data1.row(1).x.value());
     const initx0 = scaleX(data1.row(0).x.value());
@@ -70,7 +70,7 @@ export default class Bars implements Representation {
       const y1 = scaleY(row.y1.value());
 
       if (rectOverlap([x0, x1], [y0, y1], selX, selY)) {
-        selectedCases.push(...row.positions.value());
+        selectedCases.push(...row[Symbol.for("positions")].value());
       }
     }
 

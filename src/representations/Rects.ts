@@ -50,7 +50,7 @@ export default class Rects implements Representation {
       const y1 = scaleY(row.y1.value());
 
       if (rectOverlap([x0, x1], [y0, y1], selX, selY)) {
-        selectedCases.push(...row.positions.value());
+        selectedCases.push(...row[Symbol.for("positions")].value());
       }
     }
 

@@ -1,76 +1,72 @@
 import { Accessor } from "solid-js";
 import { Dataframe } from "../structs/Dataframe";
 import { Factor } from "../structs/Factor";
-import { POJO, identity, secondArgument } from "../utils/funs";
-import { Cols, JustFn, MapFn, ReduceFn, Row, RowOf } from "../utils/types";
-import { Partition } from "./Partition";
+import { Cols, Lazy, MapFn, ReduceFn, Row, RowOf } from "../utils/types";
+import { Partition2 } from "./Partition2";
+import { Recipe } from "./Recipe";
 
 export class PartitionSet<T extends Cols> {
-  partitions: Partition<any>[];
+  partitions: Partition2<any>[];
+  recipes: Recipe<RowOf<T>, Row, Row>[];
 
   constructor(public factors: Accessor<Factor>[], public data: Dataframe<T>) {
     this.partitions = [];
+    this.recipes = [];
 
-    let partition = new Partition(
-      factors.shift()!,
-      data,
-      secondArgument,
-      POJO,
-      identity,
-      secondArgument,
-      POJO
-    );
-
-    this.partitions.push(partition);
-
-    for (const factor of factors) {
-      partition = partition.nest(factor);
-      this.partitions.push(partition);
-    }
+    for (const _ of factors) this.recipes.push(Recipe.default());
   }
 
-  reduceAt = <U>(
+  reduceAt = <U extends Row>(
     index: number,
     reducefn: ReduceFn<RowOf<T>, U>,
-    init: JustFn<U>
+    init: Lazy<U>
   ) => {
-    this.partitions[index].setReduce(reducefn, init);
+    this.recipes[index].reduce(reducefn, init);
     return this;
   };
 
-  reduce = <U>(reducefn: ReduceFn<RowOf<T>, U>, init: JustFn<U>) => {
-    for (const partition of this.partitions)
-      partition.setReduce(reducefn, init);
+  reduce = <U extends Row>(reducefn: ReduceFn<RowOf<T>, U>, init: Lazy<U>) => {
+    for (const recipe of this.recipes) recipe.reduce(reducefn, init);
     return this;
   };
 
   mapAt = <U extends Row, V extends Row>(index: number, mapfn: MapFn<U, V>) => {
-    this.partitions[index].setMap(mapfn);
+    this.recipes[index].map(mapfn as any);
     return this;
   };
 
   map = <U extends Row, V extends Row>(mapfn: MapFn<U, V>) => {
-    for (const partition of this.partitions) partition.setMap(mapfn);
+    for (const recipe of this.recipes) recipe.map(mapfn as any);
     return this;
   };
 
   stackAt = <U extends Row>(
     index: number,
     stackfn: ReduceFn<U, U>,
-    init: JustFn<U>
+    init: Lazy<U>
   ) => {
-    this.partitions[index].setStack(stackfn, init);
+    this.recipes[index].stack(stackfn, init);
     return this;
   };
 
-  stack = <U extends Row>(stackfn: ReduceFn<U, U>, init: JustFn<U>) => {
-    for (const partition of this.partitions) partition.setStack(stackfn, init);
+  stack = <U extends Row>(stackfn: ReduceFn<U, U>, init: Lazy<U>) => {
+    for (const recipe of this.recipes) recipe.stack(stackfn, init);
     return this;
   };
 
-  partData = (index: number) => this.partitions[index].partData?.();
+  partData = (index: number) => this.partitions[index].mappedStacked?.();
   update = () => {
+    const { factors, data, recipes } = this;
+    let partition = new Partition2(factors[0], data, recipes[0]);
+    this.partitions.push(partition);
+
+    for (let i = 1; i < this.factors.length; i++) {
+      partition = partition.nest(factors[i], recipes[i]);
+      this.partitions.push(partition);
+    }
+
     for (const partition of this.partitions) partition.update();
+
     return this;
   };
 }

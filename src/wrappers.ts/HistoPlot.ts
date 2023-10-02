@@ -12,40 +12,42 @@ import { Numeric } from "../structs/Variable";
 import { values } from "../utils/funs";
 import { Cols, KeysOfType } from "../utils/types";
 
-export class HistoPlot<T extends Cols, K extends KeysOfType<T, Numeric>> {
-  data: Dataframe<{ var1: Numeric }>;
+export class HistoPlot<
+  T extends Cols,
+  K extends KeysOfType<T, Numeric>,
+  U extends Dataframe<{ var1: Numeric }> = Dataframe<{ var1: Numeric }>
+> {
+  data: U;
   plot: Plot;
   partitionSet: PartitionSet<any>;
 
   constructor(public scene: Scene<T>, public mapping: { var1: K }) {
-    const data = scene.data.select(mapping);
-    this.data = data;
+    this.data = scene.data.select(mapping) as unknown as U;
+    this.plot = new Plot(scene);
 
-    const plot = new Plot(scene);
-    this.plot = plot;
+    const { data, plot } = this;
+    const { keyActions } = plot;
 
-    const [width, setWidth] = createSignal(5);
-    const [anchor, setAnchor] = createSignal(0);
+    const { min, max } = data.cols.var1.meta;
+    const range = max - min;
 
-    this.plot.keyActions["Equal"] = () => setWidth((w) => (w * 10) / 9);
-    this.plot.keyActions["Minus"] = () => setWidth((w) => (w * 9) / 10);
-    this.plot.keyActions["BracketRight"] = () => setAnchor((a) => a + 1);
-    this.plot.keyActions["BracketLeft"] = () => setAnchor((a) => a - 1);
+    const [width, setWidth] = createSignal(range / 20);
+    const [anchor, setAnchor] = createSignal(min);
 
-    const whole = () => FactorMono.of(scene.data.meta.n);
-    const bins = () => {
-      return (scene.data.cols[mapping.var1] as Numeric).bin(
-        sig(width),
-        sig(anchor)
-      );
-    };
+    keyActions["Equal"] = () => setWidth((w) => (w * 10) / 9);
+    keyActions["Minus"] = () => setWidth((w) => (w * 9) / 10);
+    keyActions["BracketRight"] = () => setAnchor((a) => a + 1);
+    keyActions["BracketLeft"] = () => setAnchor((a) => a - 1);
+
+    const whole = () => FactorMono.of(data.meta.n);
+    const bins = () => data.cols.var1.bin(sig(width), sig(anchor));
     const marker = scene.marker.factor;
 
     const factors = [whole, bins, marker];
 
     const partitionSet = new PartitionSet(factors, data)
       .reduce(
-        ({ count }, {}) => ({ count: count.inc() }),
+        ({ count }, _) => ({ count: count.inc() }),
         () => ({ count: num(0) })
       )
       .map(({ binMin, binMax, count }) => ({
@@ -65,12 +67,12 @@ export class HistoPlot<T extends Cols, K extends KeysOfType<T, Numeric>> {
 
     for (const scale of values(plot.scales)) {
       scale.data.x = scale.data.x.setDomain!(
-        sig(() => partitionSet.partData(1).cols.x0.meta.min),
-        sig(() => partitionSet.partData(1).cols.x1.meta.max)
+        sig(() => (partitionSet.partData(1).cols.x0 as Numeric).meta.min),
+        sig(() => (partitionSet.partData(1).cols.x1 as Numeric).meta.max)
       );
       scale.data.y = scale.data.y.setDomain!(
         num(0),
-        sig(() => partitionSet.partData(1).cols.y1.meta.max)
+        sig(() => (partitionSet.partData(1).cols.y1 as Numeric).meta.max)
       );
     }
 

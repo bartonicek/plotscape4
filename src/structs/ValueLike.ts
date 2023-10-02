@@ -1,9 +1,9 @@
 import { Accessor } from "solid-js";
-import { JustFn } from "../utils/types";
+import { Lazy } from "../utils/types";
 
 export type ValueLike<T> = {
   value: () => T;
-  setIndexFn?: (indexfn: JustFn<number>) => void;
+  setIndexFn?: (indexfn: Lazy<number>) => void;
 };
 
 export class Value<T> implements ValueLike<T> {
@@ -12,9 +12,9 @@ export class Value<T> implements ValueLike<T> {
 }
 
 export class View<T> implements ValueLike<T> {
-  constructor(public array: T[], public indexfn: JustFn<number>) {}
+  constructor(public array: T[], public indexfn: Lazy<number>) {}
   value = () => this.array[this.indexfn()];
-  setIndexFn = (indexfn: JustFn<number>) => {
+  setIndexFn = (indexfn: Lazy<number>) => {
     this.indexfn = indexfn;
   };
 }
@@ -26,6 +26,6 @@ export class Signal<T> implements ValueLike<T> {
 
 export const val = <T>(value: T) => new Value(value);
 export const sig = <T>(accessor: Accessor<T>) => new Signal(accessor);
-export const view = <T>(array: T[], indexfn: JustFn<number>) => {
+export const view = <T>(array: T[], indexfn: Lazy<number>) => {
   return new View(array, indexfn);
 };

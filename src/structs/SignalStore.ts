@@ -1,50 +1,36 @@
 import { Accessor, Setter, createSignal } from "solid-js";
-import { entries } from "../utils/funs";
-import { DropNever, Fn, Scalar } from "../utils/types";
-import { Factor } from "./Factor";
-import { Variable } from "./Variable";
+import { isFunction } from "../utils/guards";
+import { Flatten, MapFn } from "../utils/types";
 
 export type Getters = { [key: string]: Accessor<any> };
 export type Setters = { [key: string]: Setter<any> };
 
 export class SignalStore<T extends Getters, U extends Setters> {
   constructor(public getters: T, public setters: U) {}
-
   static default = () => new SignalStore({}, {});
 
-  bind = <
-    V extends { [key: string]: Scalar | Variable | ((getters: T) => any) }
-  >(
-    bindObj: V
-  ) => {
-    const getters = this.getters as Getters;
-    const setters = this.setters as Setters;
+  bind = <K extends string, V extends any>(key: K, value: V | MapFn<T, V>) => {
+    // Have to type assert in return anyway
+    const getters = this.getters as any;
+    const setters = this.setters as any;
 
-    for (const [k, v] of entries(bindObj)) {
-      const key = k as string;
-      if (typeof v === "function") {
-        getters[key] = () => v(getters as T);
-      } else {
-        const [getter, setter] = createSignal(v);
-        getters[key] = getter;
-        setters[key] = setter;
-      }
+    if (isFunction(value)) {
+      const getter = () => value(this.getters);
+      getters[key] = getter;
+    } else {
+      const [getter, setter] = createSignal(value);
+      getters[key] = getter;
+      setters[key] = setter;
     }
 
     return new SignalStore(
-      getters as T & {
-        [key in keyof V]: V[key] extends Fn
-          ? Accessor<ReturnType<V[key]>>
-          : Accessor<V[key]>;
-      },
-      setters as U &
-        DropNever<{
-          [key in keyof V]: V[key] extends Scalar ? Setter<V[key]> : never;
-        }>
+      getters as Flatten<T & { [key in K]: Accessor<V> }>,
+      setters as V extends Function ? Flatten<U & { [key in K]: Setter<V> }> : U
     );
   };
 
-  extract = (extractfn: (getters: T) => Accessor<Factor>[]) => {
-    return extractfn(this.getters);
+  get = (key: keyof T) => this.getters[key]();
+  set = <K extends keyof U>(key: K, value: Parameters<U[K]>[0]) => {
+    this.setters[key](value);
   };
 }
