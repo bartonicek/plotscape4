@@ -2,11 +2,11 @@ import { Accessor } from "solid-js";
 import { Dataframe } from "../structs/Dataframe";
 import { Factor } from "../structs/Factor";
 import { Cols, Lazy, MapFn, ReduceFn, Row, RowOf } from "../utils/types";
-import { Partition2 } from "./Partition2";
+import { Partition } from "./Partition";
 import { Recipe } from "./Recipe";
 
 export class PartitionSet<T extends Cols> {
-  partitions: Partition2<any>[];
+  partitions: Partition<any>[];
   recipes: Recipe<RowOf<T>, Row, Row>[];
 
   constructor(public factors: Accessor<Factor>[], public data: Dataframe<T>) {
@@ -54,10 +54,10 @@ export class PartitionSet<T extends Cols> {
     return this;
   };
 
-  partData = (index: number) => this.partitions[index].mappedStacked?.();
+  partData = (index: number) => this.partitions[index].mappedStacked();
   update = () => {
     const { factors, data, recipes } = this;
-    let partition = new Partition2(factors[0], data, recipes[0]);
+    let partition = new Partition(factors[0], data, recipes[0]);
     this.partitions.push(partition);
 
     for (let i = 1; i < this.factors.length; i++) {

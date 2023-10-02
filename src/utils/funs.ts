@@ -5,6 +5,7 @@ export const lazy =
   <T>(x: T) =>
   () =>
     x;
+export const noop = () => {};
 export const identity = <T>(x: T) => x;
 export const firstArgument = <T>(x: T, y: any) => x;
 export const secondArgument = <T>(x: any, y: T) => y;

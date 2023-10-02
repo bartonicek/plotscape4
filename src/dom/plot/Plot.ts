@@ -4,7 +4,7 @@ import { AxisLabels } from "../../decorations/AxisLabels";
 import { Decoration } from "../../decorations/Decoration";
 import { Representation } from "../../representations/Representation";
 import { drawClear, drawRect } from "../../utils/drawfuns";
-import { call, throttle, toInt } from "../../utils/funs";
+import { call, diff, throttle, toInt } from "../../utils/funs";
 import graphicParameters from "../graphicParameters";
 import { Scene } from "../scene/Scene";
 import { Contexts, contexts } from "./Context";
@@ -75,24 +75,29 @@ export class Plot {
         this.store.setNormYUpper(defaultNorm.y.upper);
       },
       KeyZ: () => {
-        // const { clickX, clickY, mouseX, mouseY } = this.store;
-        // const { x, y } = this.scales.inner.pct;
-        // const [xLower, xUpper] = [clickX, mouseX]
-        //   .map(call)
-        //   .sort(diff)
-        //   .map(x.pushforward);
-        // const [yLower, yUpper] = [clickY, mouseY]
-        //   .map(call)
-        //   .sort(diff)
-        //   .map(y.pushforward);
-        // const xRange = 1 / (xUpper - xLower);
-        // const yRange = 1 / (yUpper - yLower);
-        // this.store.setNormXLower(-xLower * xRange);
-        // this.store.setNormXUpper(-xLower * xRange + xRange);
-        // this.store.setNormYLower(-yLower * yRange);
-        // this.store.setNormYUpper(-yLower * yRange + yRange);
-        // scene.marker.clearTransient();
-        // drawClear(this.contexts.user);
+        const { clickX, clickY, mouseX, mouseY } = this.store;
+        const { innerH, innerV, normX, normY } = this.expanses;
+
+        const [xLower, xUpper] = [clickX, mouseX]
+          .map(call)
+          .sort(diff)
+          .map(innerH.normalize)
+          .map(normX.normalize);
+
+        const [yLower, yUpper] = [clickY, mouseY]
+          .map(call)
+          .sort(diff)
+          .map(innerV.normalize)
+          .map(normY.normalize);
+
+        const xRange = 1 / (xUpper - xLower);
+        const yRange = 1 / (yUpper - yLower);
+        this.store.setNormXLower(-xLower * xRange);
+        this.store.setNormXUpper(-xLower * xRange + xRange);
+        this.store.setNormYLower(-yLower * yRange);
+        this.store.setNormYUpper(-yLower * yRange + yRange);
+        scene.marker.clearTransient();
+        drawClear(this.contexts.user);
       },
     };
 

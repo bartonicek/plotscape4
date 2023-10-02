@@ -62,6 +62,8 @@ export class AxisLabels<T extends string | number> {
     context.textBaseline = axisAlign[along].textBaseline;
     context.textAlign = axisAlign[along].textAlign;
 
+    let lastX = 0;
+
     if (along === "x") {
       for (let i = 0; i < at.length; i++) {
         const label = labels[i];
@@ -70,7 +72,10 @@ export class AxisLabels<T extends string | number> {
         const wh = w / 2;
 
         if (x - wh < innerLeft() || x + wh > innerRight()) continue;
+        if (x - w < lastX) continue; // Check label overlap
+
         drawText(context, label, x, yBase, { fontsize });
+        lastX = x + w;
       }
     } else if (along === "y") {
       for (let i = 0; i < at.length; i++) {

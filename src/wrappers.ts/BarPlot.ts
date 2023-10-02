@@ -8,7 +8,7 @@ import { PartitionSet } from "../structs/PartitionSet";
 import { num } from "../structs/Scalar";
 import { sig } from "../structs/ValueLike";
 import { Discrete, Numeric } from "../structs/Variable";
-import { values } from "../utils/funs";
+import { noop, values } from "../utils/funs";
 import { Cols, KeysOfType } from "../utils/types";
 
 export class BarPlot<
@@ -58,6 +58,8 @@ export class BarPlot<
         sig(() => (partitionSet.partData(1).cols.y1 as Numeric).meta.max)
       );
     }
+
+    this.plot.store.setNormYLower = noop;
 
     const adapter = new Adapter(plot.contexts, partitionSet, plot.scales);
     const bars = new Bars(adapter);

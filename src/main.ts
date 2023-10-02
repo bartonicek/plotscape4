@@ -21,6 +21,4 @@ createRoot(() => {
   const barplot1 = new BarPlot(scene1, { var1: "manufacturer" });
   const histoplot1 = new HistoPlot(scene1, { var1: "hwy" });
   scene1.setRowsCols(2, 1);
-
-  barplot1.plot.store.setClickX(100);
 });
