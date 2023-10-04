@@ -11,9 +11,10 @@ export const firstArgument = <T>(x: T, y: any) => x;
 export const secondArgument = <T>(x: any, y: T) => y;
 export const POJO = () => ({});
 
-export const diff = (x: number, y: number) => x - y;
-
+export const abs = Math.abs;
 export const toInt = (x: string) => parseInt(x, 10);
+
+export const diff = (x: number, y: number) => x - y;
 
 export const keys = <T extends Dict, K extends keyof T>(x: T) => {
   return Object.keys(x) as K[];
@@ -48,6 +49,7 @@ export const minMax = (x: number[]) => {
   }
   return [min, max];
 };
+
 export const minMaxSum = (x: number[]) => {
   let [min, max, sum] = [Infinity, -Infinity, 0];
   for (let i = 0; i < x.length; i++) {
@@ -61,17 +63,22 @@ export const minMaxSum = (x: number[]) => {
 export const disjointUnion = <T extends Dict, U extends Dict>(
   object1: T,
   object2: U,
-  options?: { keepSecond?: Set<string> }
+  options?: { keepSecond?: Set<string | symbol> }
 ): T & U => {
   const result = {} as T & U;
 
-  for (const [key, value] of Object.entries(object1)) {
+  for (const key of Reflect.ownKeys(object1)) {
     if (options?.keepSecond?.has(key)) continue;
-    result[key as keyof T] = value;
+    result[key as keyof T] = object1[key];
   }
 
-  for (const [key, value] of Object.entries(object2)) {
+  for (const key of Reflect.ownKeys(object2)) {
     if (key in result) {
+      if (typeof key === "symbol") {
+        result[key as keyof T & U] = object2[key];
+        continue;
+      }
+
       const name = key.match(/[a-zA-Z]+/g)?.[0] ?? "default";
       const number = parseInt(key.match(/\d+$/)?.[0] ?? "0", 10);
 
@@ -79,13 +86,13 @@ export const disjointUnion = <T extends Dict, U extends Dict>(
       const newKey = (name + (number + 1)) as keyof U;
 
       result[oldKey] = result[key];
-      result[newKey] = value;
+      result[newKey] = object2[key];
       delete result[key];
 
       continue;
     }
 
-    result[key as keyof U] = value;
+    result[key as keyof U] = object2[key];
   }
 
   return result;

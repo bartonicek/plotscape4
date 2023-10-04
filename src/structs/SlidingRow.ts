@@ -10,7 +10,7 @@ export class SlidingRow<T extends Cols> {
     this.row = data.row(index);
     this.indexfn = () => this.index;
 
-    for (const val of values(this.row)) val.setIndexFn(this.indexfn);
+    for (const val of values(this.row)) val.setIndexFn?.(this.indexfn);
   }
 
   static from = <T extends Cols>(data: Dataframe<T>, index: number) => {

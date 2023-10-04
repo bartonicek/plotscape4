@@ -1,5 +1,13 @@
 import { POJO, identity, secondArgument } from "../utils/funs";
-import { Lazy, MapFn, ReduceFn, Row } from "../utils/types";
+import { Cols, ColsOf, Lazy, MapFn, ReduceFn, Row } from "../utils/types";
+
+const initState = {
+  reduced: false,
+  mapped: false,
+  stacked: false,
+  relabeled: false,
+};
+type RecipeState = typeof initState;
 
 export class Recipe<T extends Row, U extends Row, V extends Row> {
   constructor(
@@ -8,7 +16,8 @@ export class Recipe<T extends Row, U extends Row, V extends Row> {
     public mapfn: MapFn<U, V>,
     public stackfn: ReduceFn<V, V>,
     public stackinit: Lazy<V>,
-    public state: { reduced: boolean; mapped: boolean; stacked: boolean }
+    public relabelfn: MapFn<any, any>,
+    public state: RecipeState
   ) {}
 
   static default = <T extends Row>() => {
@@ -18,7 +27,8 @@ export class Recipe<T extends Row, U extends Row, V extends Row> {
       identity,
       secondArgument,
       POJO,
-      { reduced: false, mapped: false, stacked: false }
+      identity,
+      initState
     );
   };
 
@@ -40,5 +50,11 @@ export class Recipe<T extends Row, U extends Row, V extends Row> {
     this.stackinit = init as any;
     this.state.stacked = true;
     return this as unknown as Recipe<T, U, V2>;
+  };
+
+  relabel = <W2 extends Cols>(relabelfn: MapFn<ColsOf<V>, W2>) => {
+    this.relabelfn = relabelfn;
+    this.state.relabeled = true;
+    return this as unknown as Recipe<T, U, V>;
   };
 }

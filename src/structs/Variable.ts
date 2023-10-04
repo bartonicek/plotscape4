@@ -1,13 +1,14 @@
 import { minMaxSum } from "../utils/funs";
-import { Lazy } from "../utils/types";
+import { Lazy, Scalar } from "../utils/types";
 import { FactorBinned, FactorDiscrete } from "./Factor";
 import { Dis, Num, Ref } from "./Scalar";
 import { ValueLike, view } from "./ValueLike";
 
-// export type VariableLike = {
-//   ith: (indexfn: Lazy<number>) => ScalarLike<any>;
-//   push: (scalar: ScalarLike<any>) => number;
-// };
+export type VariableLike<T extends Scalar> = {
+  ith: (indexfn: Lazy<number>) => T;
+  push: (scalar: T) => number;
+  empty: () => void;
+};
 
 export type Variable = Numeric | Discrete | Reference;
 export type ScalarOf<T extends Variable> = T extends Numeric
@@ -18,7 +19,7 @@ export type ScalarOf<T extends Variable> = T extends Numeric
   ? Ref
   : never;
 
-export class Numeric {
+export class Numeric implements VariableLike<Num> {
   meta: { n: number; min: number; max: number; sum: number };
 
   constructor(public array: number[]) {
@@ -55,7 +56,7 @@ export class Numeric {
   };
 }
 
-export class Discrete {
+export class Discrete implements VariableLike<Dis> {
   meta: { n: number; values: Set<string> };
 
   constructor(public array: string[]) {
@@ -63,7 +64,7 @@ export class Discrete {
   }
 
   static default = () => new Numeric([]);
-  static from = (array: number[]) => new Numeric(array);
+  static from = (array: string[]) => new Discrete(array);
 
   factor = () => FactorDiscrete.from(this.array);
 
@@ -84,7 +85,7 @@ export class Discrete {
   };
 }
 
-export class Reference {
+export class Reference implements VariableLike<Ref> {
   meta: { n: number };
 
   constructor(public array: object[]) {

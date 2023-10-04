@@ -1,30 +1,44 @@
 import { allKeys, entries, lazy, unwrapAll } from "../utils/funs";
-import { Cols, RowOf } from "../utils/types";
-import { Discrete, Numeric, ScalarOf } from "./Variable";
+import { Cols, Key, MapFn, RowOf } from "../utils/types";
+import {
+  Discrete,
+  Numeric,
+  Reference,
+  ScalarOf,
+  Variable,
+  VariableLike,
+} from "./Variable";
+
+const colConstructorMap = {
+  numeric: Numeric,
+  discrete: Discrete,
+  reference: Reference,
+};
+type ColConstructorMap = typeof colConstructorMap;
+type ColTypeMap = {
+  [key in keyof ColConstructorMap]: InstanceType<ColConstructorMap[key]>;
+};
 
 export class Dataframe<T extends Cols> {
   meta: { n: number; keys: (string | symbol)[] };
-  rowIds: Record<number, number>;
 
-  constructor(public cols: T, rowIds?: Record<number, number>) {
+  constructor(public cols: T) {
     const n = Object.values(cols)[0].meta.n;
     this.meta = { n, keys: Reflect.ownKeys(cols) };
-    this.rowIds = rowIds ?? {};
-    if (!rowIds) for (let i = 0; i < n; i++) this.rowIds[i] = i;
   }
 
-  static from = <T extends Cols>(cols: T, rowIds?: Record<number, number>) => {
-    return new Dataframe(cols, rowIds);
+  static from = <T extends Cols>(cols: T) => {
+    return new Dataframe(cols);
   };
 
-  static fromRow = <T extends Cols>(row: RowOf<T>, id?: number) => {
+  static fromRow = <T extends Cols>(row: RowOf<T>) => {
     const cols = {} as T;
 
     for (const k of allKeys(row)) {
       if (row[k]) cols[k] = row[k].toVariable() as any;
     }
 
-    return Dataframe.from(cols, { [id ?? 0]: 0 });
+    return Dataframe.from(cols);
   };
 
   static fromRows = <T extends Cols>(rows: RowOf<T>[]) => {
@@ -34,31 +48,31 @@ export class Dataframe<T extends Cols> {
   };
 
   static parseCols = <
-    U extends Record<string, "numeric" | "discrete">,
+    U extends Record<string, keyof ColTypeMap>,
     V extends Record<keyof U, any[]>
   >(
     unparsed: V,
     spec: U
   ) => {
-    const cols = {} as {
-      [key in keyof typeof spec]: U[key] extends "numeric"
-        ? Numeric
-        : U[key] extends "discrete"
-        ? Discrete
-        : never;
-    };
+    const cols = {} as { [key in keyof U]: ColTypeMap[U[key]] };
 
     for (const [k, v] of entries(spec)) {
-      cols[k] =
-        v === "numeric"
-          ? new Numeric(unparsed[k as keyof V])
-          : (new Discrete(unparsed[k as keyof V]) as any);
+      cols[k] = new colConstructorMap[v](unparsed[k]) as ColTypeMap[typeof v];
     }
+
     return Dataframe.from(cols);
   };
 
-  push = (row: RowOf<T>, id?: number) => {
-    this.rowIds[id ?? this.meta.n] = this.meta.n;
+  appendCol = <K extends string | symbol, V extends VariableLike<any>>(
+    key: K,
+    variable: V
+  ) => {
+    this.cols[key] = variable as any;
+    this.meta.keys.push(key);
+    return this;
+  };
+
+  push = (row: RowOf<T>) => {
     for (const k of allKeys(row)) {
       if (this.cols[k]) this.cols[k].push(row[k] as any);
     }
@@ -71,10 +85,15 @@ export class Dataframe<T extends Cols> {
     return this;
   };
 
-  select = <U extends Record<string, keyof T>>(keyMap: U) => {
-    const cols = {} as { [key in keyof U]: T[U[key]] };
-    for (const [k1, k2] of entries(keyMap)) cols[k1] = this.cols[k2];
+  select = <U extends Record<Key, Variable>>(selectfn: MapFn<T, U>) => {
+    const cols = selectfn(this.cols);
     return new Dataframe(cols);
+  };
+
+  col = (key: keyof T) => this.cols[key];
+
+  cell = (key: keyof T, index: number) => {
+    return this.cols[key].ith(lazy(index));
   };
 
   row = (index: number) => {

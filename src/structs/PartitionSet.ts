@@ -54,6 +54,16 @@ export class PartitionSet<T extends Cols> {
     return this;
   };
 
+  relabelAt = (depth: number, relabelfn: MapFn<any, any>) => {
+    this.recipes[depth].relabel(relabelfn);
+    return this;
+  };
+
+  relabel = (relabelfn: MapFn<any, any>) => {
+    for (const recipe of this.recipes) recipe.relabel(relabelfn);
+    return this;
+  };
+
   partData = (index: number) => this.partitions[index].mappedStacked();
   update = () => {
     const { factors, data, recipes } = this;

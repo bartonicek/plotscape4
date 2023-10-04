@@ -109,6 +109,7 @@ export class FactorBinned implements Factor {
   static from = (values: number[], width?: number, anchor?: number) => {
     const [min, max] = minMax(values);
     const nbins = width ? Math.ceil((max - min) / width) + 1 : 10;
+
     width = width ?? (max - min) / (nbins - 1);
     anchor = anchor ?? min;
 

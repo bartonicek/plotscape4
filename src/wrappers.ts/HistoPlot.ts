@@ -12,18 +12,19 @@ import { Numeric } from "../structs/Variable";
 import { noop, values } from "../utils/funs";
 import { Cols, KeysOfType } from "../utils/types";
 
-export class HistoPlot<
-  T extends Cols,
-  K extends KeysOfType<T, Numeric>,
-  U extends Dataframe<{ var1: Numeric }> = Dataframe<{ var1: Numeric }>
-> {
-  data: U;
+export class HistoPlot<T extends Cols> {
   plot: Plot;
+  data: Dataframe<{ var1: Numeric }>;
   partitionSet: PartitionSet<any>;
 
-  constructor(public scene: Scene<T>, public mapping: { var1: K }) {
-    this.data = scene.data.select(mapping) as unknown as U;
+  constructor(
+    public scene: Scene<T>,
+    public mappingfn: (cols: Pick<T, KeysOfType<T, Numeric>>) => {
+      var1: Numeric;
+    }
+  ) {
     this.plot = new Plot(scene);
+    this.data = scene.data.select(mappingfn);
 
     const { data, plot } = this;
     const { keyActions } = plot;

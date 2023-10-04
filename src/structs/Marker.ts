@@ -19,15 +19,23 @@ export const Group = {
   Group4: 129,
 } as const;
 
+export const [groupSymbol, layerSymbol, transientSymbol] = [
+  "group",
+  "layer",
+  "transient",
+].map(Symbol.for);
+
+const [g, l, t] = [groupSymbol, layerSymbol, transientSymbol];
+
 export const GroupLabels = {
-  4: { group: ref(1), layer: ref(4), transient: ref(true) },
-  3: { group: ref(2), layer: ref(3), transient: ref(true) },
-  2: { group: ref(3), layer: ref(2), transient: ref(true) },
-  1: { group: ref(4), layer: ref(1), transient: ref(true) },
-  132: { group: ref(1), layer: ref(132), transient: ref(false) },
-  131: { group: ref(2), layer: ref(131), transient: ref(false) },
-  130: { group: ref(3), layer: ref(130), transient: ref(false) },
-  129: { group: ref(4), layer: ref(129), transient: ref(false) },
+  4: { [g]: ref(1), [l]: ref(4), [t]: ref(true) },
+  3: { [g]: ref(2), [l]: ref(3), [t]: ref(true) },
+  2: { [g]: ref(3), [l]: ref(2), [t]: ref(true) },
+  1: { [g]: ref(4), [l]: ref(1), [t]: ref(true) },
+  132: { [g]: ref(1), [l]: ref(132), [t]: ref(false) },
+  131: { [g]: ref(2), [l]: ref(131), [t]: ref(false) },
+  130: { [g]: ref(3), [l]: ref(130), [t]: ref(false) },
+  129: { [g]: ref(4), [l]: ref(129), [t]: ref(false) },
 } as const;
 
 export const groups = [4, 3, 2, 1, 132, 131, 130, 129] as const;

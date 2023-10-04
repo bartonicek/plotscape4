@@ -11,18 +11,19 @@ import { Discrete, Numeric } from "../structs/Variable";
 import { noop, values } from "../utils/funs";
 import { Cols, KeysOfType } from "../utils/types";
 
-export class BarPlot<
-  T extends Cols,
-  K extends KeysOfType<T, Discrete>,
-  U extends Dataframe<{ var1: Discrete }>
-> {
+export class BarPlot<T extends Cols> {
   data: Dataframe<{ var1: Discrete }>;
   plot: Plot;
   partitionSet: PartitionSet<any>;
 
-  constructor(public scene: Scene<T>, public mapping: { var1: K }) {
-    this.data = scene.data.select(mapping) as unknown as U;
+  constructor(
+    public scene: Scene<T>,
+    public mappingfn: (cols: Pick<T, KeysOfType<T, Discrete>>) => {
+      var1: Discrete;
+    }
+  ) {
     this.plot = new Plot(scene);
+    this.data = scene.data.select(mappingfn);
 
     const whole = () => FactorMono.of(scene.data.meta.n);
     const factor = this.data.cols.var1.factor;

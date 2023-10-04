@@ -7,7 +7,21 @@ import { Recipe } from "./Recipe";
 import { ref } from "./Scalar";
 import { SlidingRow } from "./SlidingRow";
 
-const symbolProps = ["parent", "positions"];
+const symbolProps = ["parent", "positions", "layer", "group", "transient"].map(
+  Symbol.for
+);
+
+const [
+  parentSymbol,
+  positionsSymbol,
+  layerSymbol,
+  groupSymbol,
+  transientSymbol,
+] = symbolProps;
+
+// Declared separately since we dont want to copy this
+// but append to parent
+const stackSymbol = Symbol.for("stack");
 
 export class Partition<T extends Cols> {
   reduced: Accessor<Dataframe<Cols>>;
@@ -42,7 +56,6 @@ export class Partition<T extends Cols> {
 
   reduce = (): Dataframe<Cols> => {
     const { data, parent, recipe } = this;
-    if (!recipe.state.reduced) return this.data as unknown as Dataframe<Cols>;
 
     const factor = this.factor();
     const indices = factor.indices();
@@ -50,6 +63,10 @@ export class Partition<T extends Cols> {
     const parentFactor = parent ? untrack(parent.factor) : undefined;
     const parentIndices = parentFactor?.indices();
     const parentUniqueIndices = Array.from(parentFactor?.uniqueIndices() ?? []);
+
+    if (!recipe.state.reduced) {
+      return this.data as Dataframe<Cols>;
+    }
 
     const reducedParts: Record<number, Record<string | symbol, Scalar>> = {};
     const dataRow = SlidingRow.from(data, 0);
@@ -69,17 +86,18 @@ export class Partition<T extends Cols> {
     }
 
     const row1 = values(reducedParts)[0];
-    for (const s of symbolProps) row1[Symbol.for(s)] = ref(undefined);
-    Object.assign(row1, factor.label(factor.indices()[0]));
+    for (const s of symbolProps) row1[s] = ref(undefined);
+    Object.assign(row1, factor.label(indices[0]));
 
     const reducedData = Dataframe.fromRow(row1).empty();
 
     for (const index of uniqueIndices) {
       const positions = factor.positions(index);
-      reducedParts[index][Symbol.for("positions")] = ref(positions);
-      reducedParts[index][Symbol.for("parent")] = ref(parentRowIndexMap[index]);
+      reducedParts[index][positionsSymbol] = ref(positions);
+      reducedParts[index][parentSymbol] = ref(parentRowIndexMap[index]);
+
       Object.assign(reducedParts[index], factor.label(index));
-      reducedData.push(reducedParts[index], index);
+      reducedData.push(reducedParts[index]);
     }
 
     return reducedData;
@@ -87,24 +105,15 @@ export class Partition<T extends Cols> {
 
   mapStack = () => {
     const { recipe, parent } = this;
-    const reduced = this.reduce() as Dataframe<T & { parent: Row }>;
-
-    const [parentSymbol, stackSymbol, positionsSymbol] = [
-      "parent",
-      "stack",
-      "positions",
-    ].map(Symbol.for);
+    const reduced = this.reduced();
 
     if (!parent) return Dataframe.fromRow(recipe.mapfn(reduced.row(0)));
-    const parentRows = parent.mapStack().rows();
+    const parentRows = parent.mappedStacked().rows();
 
     const row1 = reduced.row(0) as RowOf<T> & { parent: Row };
     row1.parent = parentRows[row1[parentSymbol].value()];
 
     const mappedRow1 = recipe.mapfn(row1);
-    for (const k of ["layer", "group", "transient"]) mappedRow1[k] = row1[k];
-    for (const s of symbolProps) mappedRow1[Symbol.for(s)] = ref(undefined);
-
     const mappedStacked = Dataframe.fromRow(mappedRow1).empty();
 
     for (const row of reduced) {
@@ -112,10 +121,6 @@ export class Partition<T extends Cols> {
       const parentRow = parentRows[parentRowIndex];
       row.parent = parentRow as any;
       const mappedRow = recipe.mapfn(row);
-      mappedRow[positionsSymbol] = row[positionsSymbol];
-      mappedRow[parentSymbol] = row[parentSymbol];
-
-      for (const k of ["layer", "group", "transient"]) mappedRow[k] = row[k];
 
       if (!recipe.state.stacked) {
         mappedStacked.push(mappedRow);
@@ -132,6 +137,9 @@ export class Partition<T extends Cols> {
       Object.assign(mappedRow, stackedRow);
       mappedStacked.push(mappedRow);
     }
+
+    // Copy over columns from reduced dataset
+    for (const s of symbolProps) mappedStacked.appendCol(s, reduced.col(s));
 
     return mappedStacked;
   };

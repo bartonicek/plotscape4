@@ -4,7 +4,7 @@ import { AxisLabels } from "../../decorations/AxisLabels";
 import { Decoration } from "../../decorations/Decoration";
 import { Representation } from "../../representations/Representation";
 import { drawClear, drawRect } from "../../utils/drawfuns";
-import { call, diff, throttle, toInt } from "../../utils/funs";
+import { abs, call, diff, throttle, toInt } from "../../utils/funs";
 import graphicParameters from "../graphicParameters";
 import { Scene } from "../scene/Scene";
 import { Contexts, contexts } from "./Context";
@@ -75,29 +75,38 @@ export class Plot {
         this.store.setNormYUpper(defaultNorm.y.upper);
       },
       KeyZ: () => {
-        const { clickX, clickY, mouseX, mouseY } = this.store;
-        const { innerH, innerV, normX, normY } = this.expanses;
+        const { store, contexts, expanses } = this;
+        const [clickX, clickY, mouseX, mouseY] = [
+          store.clickX(),
+          store.clickY(),
+          store.mouseX(),
+          store.mouseY(),
+        ];
+        const { innerH, innerV, normX, normY } = expanses;
+
+        if (abs(mouseX - clickX) < 10 || abs(mouseY - clickY) < 10) return;
 
         const [xLower, xUpper] = [clickX, mouseX]
-          .map(call)
           .sort(diff)
           .map(innerH.normalize)
           .map(normX.normalize);
 
         const [yLower, yUpper] = [clickY, mouseY]
-          .map(call)
           .sort(diff)
           .map(innerV.normalize)
           .map(normY.normalize);
 
+        // Need to invert: e.g. if xLower is 0.3,
+        // then norm.unnormalize(0.3) should be 0
         const xRange = 1 / (xUpper - xLower);
         const yRange = 1 / (yUpper - yLower);
-        this.store.setNormXLower(-xLower * xRange);
-        this.store.setNormXUpper(-xLower * xRange + xRange);
-        this.store.setNormYLower(-yLower * yRange);
-        this.store.setNormYUpper(-yLower * yRange + yRange);
+        store.setNormXLower(-xLower * xRange);
+        store.setNormYLower(-yLower * yRange);
+        store.setNormXUpper(-xLower * xRange + xRange);
+        store.setNormYUpper(-yLower * yRange + yRange);
+
         scene.marker.clearTransient();
-        drawClear(this.contexts.user);
+        drawClear(contexts.user);
       },
     };
 

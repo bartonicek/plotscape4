@@ -5,7 +5,7 @@ import { PartitionSet } from "./PartitionSet";
 export class Adapter {
   constructor(
     public contexts: Contexts,
-    public partitionSet: PartitionSet<any, any>,
+    public partitionSet: PartitionSet<any>,
     public scales: PlotScales
   ) {}
 

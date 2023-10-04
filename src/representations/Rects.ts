@@ -1,7 +1,12 @@
 import graphicParameters from "../dom/graphicParameters";
 import { Context } from "../dom/plot/Context";
 import { Adapter } from "../structs/Adapter";
-import { groups } from "../structs/Marker";
+import {
+  groupSymbol,
+  groups,
+  layerSymbol,
+  transientSymbol,
+} from "../structs/Marker";
 import { drawClear, drawRect } from "../utils/drawfuns";
 import { rectOverlap } from "../utils/funs";
 import { Representation } from "./Representation";
@@ -24,13 +29,15 @@ export default class Rects implements Representation {
       const y0 = scaleY(row.y0.value());
       const y1 = scaleY(row.y1.value());
 
-      const context = contexts[row.layer.value() as Context];
-      const color = graphicParameters.groupColours[row.group.value() - 1];
+      const group = row[groupSymbol].value();
+      const layer = row[layerSymbol].value();
+      const transient = row[transientSymbol].value();
+
+      const context = contexts[layer as Context];
+      const color = graphicParameters.groupColours[group - 1];
 
       drawRect(context, x0, y0, x1, y1, { alpha: 1, color });
-      if (row.transient.value()) {
-        drawRect(context, x0, y0, x1, y1, transientOptions);
-      }
+      if (transient) drawRect(context, x0, y0, x1, y1, transientOptions);
     }
   };
 
